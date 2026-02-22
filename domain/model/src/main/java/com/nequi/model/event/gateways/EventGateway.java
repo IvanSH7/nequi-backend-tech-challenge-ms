@@ -6,5 +6,6 @@ import reactor.core.publisher.Mono;
 public interface EventGateway {
 
     Mono<String> createEvent(Event event, String requestId);
+    Mono<Void> updateEvent(String eventId);
 
 }

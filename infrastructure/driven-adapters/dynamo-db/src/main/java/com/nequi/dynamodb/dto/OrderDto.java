@@ -1,19 +1,19 @@
-package com.nequi.model.event;
+package com.nequi.dynamodb.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder(toBuilder = true)
-public class Event {
-    String id;
-    String name;
-    String place;
-    String date;
-    String capacity;
+public class OrderDto {
+    String pk;
+    String sk;
+    String type;
     String status;
+    Long expiresAt;
 }

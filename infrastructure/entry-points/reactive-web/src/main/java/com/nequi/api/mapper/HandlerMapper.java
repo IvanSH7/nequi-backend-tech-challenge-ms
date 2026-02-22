@@ -1,8 +1,10 @@
 package com.nequi.api.mapper;
 
+import com.nequi.api.dto.request.CreateEventRequest;
 import com.nequi.api.dto.response.*;
 import com.nequi.model.enums.GeneralMessage;
 import com.nequi.model.enums.States;
+import com.nequi.model.event.Event;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
@@ -20,8 +22,10 @@ public interface HandlerMapper {
     @Mapping(target = "data", source = "data", defaultExpression = "java(new java.util.HashMap<>())")
     Response toResponse(GeneralMessage generalMessage, Object data);
 
-    @Mapping(target = "id", constant = "d7cfd25b-8f43-4c3e-b5eb-87059dcf5de2")
-    CreateDataResponse toCreateDataResponse(String nothing);
+    Event toDomain(CreateEventRequest createEventRequest);
+
+    @Mapping(target = "id", source = "id")
+    CreateDataResponse toCreateDataResponse(String id);
 
     @Mapping(target = "name", constant = "Test")
     @Mapping(target = "date", constant = "24/12/2026")

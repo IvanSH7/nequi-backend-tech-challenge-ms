@@ -4,6 +4,6 @@ import reactor.core.publisher.Mono;
 
 public interface TicketingGateway {
 
-    Mono<Void> createTickets(String eventId);
+    Mono<Void> createTickets(String eventId, String requiredTickets);
 
 }
