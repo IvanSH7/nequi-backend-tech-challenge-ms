@@ -1,0 +1,40 @@
+server:
+  port: 9090
+spring:
+  application:
+    name: "nequi-backend-tech-challenge-ms"
+  devtools:
+    add-properties: false
+  main:
+    lazy-initialization: false
+  profiles:
+    include: null
+    active: "${SPRING_PROFILE:local}"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health"
+    base-path: "/"
+    path-mapping:
+      health: "actuator/health"
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+    diskspace:
+      enabled: false
+    ping:
+      enabled: false
+  tracing:
+    sampling:
+      probability: 0.0
+    baggage:
+      correlation:
+        fields:
+          - "x-request-id"
+      remote-fields: "x-request-id"

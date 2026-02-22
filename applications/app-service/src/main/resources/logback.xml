@@ -1,0 +1,24 @@
+<configuration>
+
+    <appender name="default" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p --- [%15.15t] %-30.30logger{39} :  %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="jsonConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <customFields>{"application":"nequi-backend-tech-challenge-ms"}</customFields>
+
+            <jsonGeneratorDecorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
+                <defaultMask>**********</defaultMask>
+                <!-- EXAMPLES -->
+                <path>documentNumber</path>
+            </jsonGeneratorDecorator>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="jsonConsoleAppender"/>
+    </root>
+</configuration>
