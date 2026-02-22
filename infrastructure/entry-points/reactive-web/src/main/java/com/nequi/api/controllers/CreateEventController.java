@@ -32,7 +32,7 @@ public class CreateEventController {
                 .filter(Errors::hasErrors)
                 .flatMap(errors -> buildResponse(Operation.CREATE_EVENT, GeneralMessage.BAD_REQUEST, requestId, errors))
                 .switchIfEmpty(Mono.defer(() ->
-                        eventUseCase.create(MAPPER.toDomain(createEventRequest), requestId)
+                        eventUseCase.create(MAPPER.toDomain(createEventRequest))
                                 .flatMap(eventId ->
                                         buildResponse(Operation.CREATE_EVENT, GeneralMessage.SUCCESS, requestId, MAPPER.toCreateDataResponse(eventId)))
                                 .doOnError(Predicate.not(ServiceException.class::isInstance), error ->

@@ -75,6 +75,14 @@ public abstract class TemplateAdapterOperations<E, K, V> {
                 .map(this::toModel);
     }
 
+    public Mono<E> getById(K partitionKey, K sortKey) {
+        return Mono.fromFuture(table.getItem(Key.builder()
+                        .partitionValue(AttributeValue.builder().s((String) partitionKey).build())
+                        .sortValue(AttributeValue.builder().s((String) sortKey).build())
+                        .build()))
+                .map(this::toModel);
+    }
+
     public Mono<E> delete(E model) {
         return Mono.fromFuture(table.deleteItem(toEntity(model))).map(this::toModel);
     }

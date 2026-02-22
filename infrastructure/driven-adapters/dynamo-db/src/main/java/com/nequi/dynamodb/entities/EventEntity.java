@@ -19,7 +19,10 @@ public class EventEntity {
             @DynamoDbAttribute("sk")
     })
     private String sk;
-    @Getter(onMethod_ = {@DynamoDbAttribute("type"), @DynamoDbIgnoreNulls})
+    @Getter(onMethod_ = {
+            @DynamoDbSecondaryPartitionKey(indexNames = "EntityTypeIndex"),
+            @DynamoDbAttribute("type"),
+            @DynamoDbIgnoreNulls})
     private String type;
     @Getter(onMethod_ = {@DynamoDbAttribute("status")})
     private String status;

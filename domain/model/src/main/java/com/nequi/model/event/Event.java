@@ -15,5 +15,6 @@ public class Event {
     String place;
     String date;
     String capacity;
+    String availability;
     String status;
 }

@@ -10,9 +10,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class QueryEventsDataResponse {
-    String name;
-    String date;
-    String place;
-    String capacity;
     String eventId;
+    String name;
+    String status;
+    String place;
+    String date;
+    String capacity;
 }

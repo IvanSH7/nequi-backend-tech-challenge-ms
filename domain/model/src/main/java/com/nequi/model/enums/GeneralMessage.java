@@ -17,10 +17,10 @@ public enum GeneralMessage {
 
     // External Errors
     BAD_REQUEST("400", "NEQ400", "Bad Request"),
+    NOT_FOUND("404", "NEQ404", "Not Found"),
 
     UNAUTHORIZED(GeneralMessage.STATUS_CODE_401, "N401000", "Unauthorized"),
     FORBIDDEN(GeneralMessage.STATUS_CODE_403, "N403000", "Forbidden"),
-    NOT_FOUND(GeneralMessage.STATUS_CODE_404, "N404000", "Not Found"),
     NOT_FOUND_1(GeneralMessage.STATUS_CODE_404, "N404001", NOT_FOUND.externalMessage),
 
     // Internal Errors

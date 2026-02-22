@@ -9,7 +9,11 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 
+import java.util.List;
 import java.util.UUID;
 
 import static com.nequi.dynamodb.mapper.DynamoMapper.MAPPER;
@@ -23,7 +27,7 @@ public class EventAdapter implements EventGateway {
     private final EventDynamoRepository eventDynamoRepository;
 
     @Override
-    public Mono<String> createEvent(Event event, String requestId) {
+    public Mono<String> createEvent(Event event) {
         var eventId = UUID.randomUUID().toString();
         var eventDto = MAPPER.toEventDto(event, eventId);
         return eventDynamoRepository.save(eventDto)
@@ -43,6 +47,28 @@ public class EventAdapter implements EventGateway {
                 .doOnError(error -> log.info("Dynamo Update Error", kv("error", error.getMessage())))
                 .onErrorMap(error -> new TechnicalException(error, GeneralMessage.INTERNAL_SERVER_ERROR))
                 .then();
+    }
+
+    @Override
+    public Mono<List<Event>> queryEvents() {
+        return eventDynamoRepository.queryByIndex(generateQueryExpression(), "EntityTypeIndex")
+                .map(events -> events.stream().map(MAPPER::toDomainQueryEvent).toList());
+    }
+
+    @Override
+    public Mono<Event> queryEvent(String eventId) {
+        return eventDynamoRepository.getById("EVENT#".concat(eventId), "METADATA")
+                .doOnSubscribe(sub -> log.info("Dynamo getItem Request", kv("eventId", eventId)))
+                .doOnSuccess(eventDto-> log.info("Dynamo getItem Response", kv("event", eventDto)))
+                .doOnError(error -> log.info("Dynamo getItem Error", kv("error", error.getMessage())))
+                .onErrorMap(error -> new TechnicalException(error, GeneralMessage.INTERNAL_SERVER_ERROR))
+                .map(MAPPER::toDomainQueryEvent);
+    }
+
+    private QueryEnhancedRequest generateQueryExpression() {
+        return QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(Key.builder().partitionValue("Event").build()))
+                .build();
     }
 
 }

@@ -34,8 +34,6 @@ public interface DynamoMapper {
     @Mapping(target = "status", constant = "PUBLISHED")
     EventDto toUpdateEventDto(String eventId);
 
-
-
     @Mapping(target = "pk", source = "eventId", qualifiedByName = "buildEventPk")
     @Mapping(target = "sk", source = "ticketId", qualifiedByName = "buildTicketSk")
     @Mapping(target = "type", constant = "Ticket")
@@ -53,6 +51,19 @@ public interface DynamoMapper {
         return String.format("TICKET#%06d", ticketId);
     }
 
+    @Mapping(target = "id", source = "eventDto.pk", qualifiedByName = "decodeId")
+    @Mapping(target = "name", source = "eventDto.name")
+    @Mapping(target = "place", source = "eventDto.place")
+    @Mapping(target = "date", source = "eventDto.date")
+    @Mapping(target = "status", source = "eventDto.status")
+    @Mapping(target = "capacity", source = "eventDto.totalCapacity")
+    @Mapping(target = "availability", source = "eventDto.availableCount")
+    Event toDomainQueryEvent(EventDto eventDto);
+
+    @Named("decodeId")
+    default String decodeId(String id) {
+        return id.split("#")[1];
+    }
 
 
 }

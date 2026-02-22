@@ -10,7 +10,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class QueryAvailabilityDataResponse {
-    String eventId;
-    String name;
     String remainingCapacity;
 }
