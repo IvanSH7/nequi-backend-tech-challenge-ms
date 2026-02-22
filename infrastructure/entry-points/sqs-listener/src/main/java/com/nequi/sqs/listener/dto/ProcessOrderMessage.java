@@ -1,4 +1,4 @@
-package com.nequi.api.dto.request;
+package com.nequi.sqs.listener.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,7 +9,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateOrderRequest {
+public class ProcessOrderMessage {
+    String id;
     String eventId;
-    Integer quantity;
+    String quantity;
+    String status;
 }

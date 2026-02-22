@@ -34,7 +34,7 @@ public class CreateEventController {
                 .switchIfEmpty(Mono.defer(() ->
                         eventUseCase.create(MAPPER.toDomain(createEventRequest))
                                 .flatMap(eventId ->
-                                        buildResponse(Operation.CREATE_EVENT, GeneralMessage.SUCCESS, requestId, MAPPER.toCreateDataResponse(eventId)))
+                                        buildResponse(Operation.CREATE_EVENT, GeneralMessage.CREATED, requestId, MAPPER.toCreateDataResponse(eventId)))
                                 .doOnError(Predicate.not(ServiceException.class::isInstance), error ->
                                         log.info("Error trying to create an event", kv("Error", error.getMessage())))
                                 .onErrorResume(ServiceException.class, error ->

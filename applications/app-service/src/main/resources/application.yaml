@@ -44,3 +44,23 @@ adapter:
     dynamo-db:
       endpoint: "${AWS_DYNAMO_ENDPOINT:http://localhost:4566}"
       ticketing-table-name: "${TICKETING_TABLE_NAME:ticketing-table-dev}"
+    sqs:
+      endpoint: "${AWS_SQS_ENDPOINT:http://localhost:4566}"
+      purchase:
+        queue-url: "${AWS_SQS_PURCHASE_QUEUE_URL:http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/purchase-queue-dev.fifo}"
+      release:
+        queue-url: "${AWS_SQS_RELEASE_QUEUE_URL:http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/release-tickets-queue-dev}"
+        delay: "${AWS_SQS_RELEASE_DELAY:300}"
+entrypoint:
+  aws:
+    sqs:
+      purchase:
+        wait-time-seconds: 20
+        max-number-of-messages: 10
+        visibility-timeout-seconds: 10
+        number-of-threads: 1
+      release:
+        wait-time-seconds: 20
+        max-number-of-messages: 10
+        visibility-timeout-seconds: 10
+        number-of-threads: 1

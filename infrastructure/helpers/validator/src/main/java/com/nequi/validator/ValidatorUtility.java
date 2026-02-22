@@ -30,6 +30,10 @@ public class ValidatorUtility {
         return isValidFieldMatchesRegularPhrase(value, REGULAR_PHRASE_NUMERIC);
     }
 
+        public static Mono<Boolean> isValidQuantity(Integer value) {
+        return Mono.just(value != null && value >= 1 && value <= 4);
+    }
+
     public static Mono<Boolean> isValidDate(String value) {
         return isValidFieldMatchesRegularPhrase(value, REGULAR_PHRASE_DATE);
     }

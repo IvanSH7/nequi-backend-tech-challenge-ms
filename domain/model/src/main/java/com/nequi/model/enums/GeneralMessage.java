@@ -18,6 +18,8 @@ public enum GeneralMessage {
     // External Errors
     BAD_REQUEST("400", "NEQ400", "Bad Request"),
     NOT_FOUND("404", "NEQ404", "Not Found"),
+    CONFLICT("429", "NEQ409", "Conflict"),
+    UNPROCESSABLE_CONTENT("422", "NEQ422", "Unprocessable Content"),
 
     UNAUTHORIZED(GeneralMessage.STATUS_CODE_401, "N401000", "Unauthorized"),
     FORBIDDEN(GeneralMessage.STATUS_CODE_403, "N403000", "Forbidden"),

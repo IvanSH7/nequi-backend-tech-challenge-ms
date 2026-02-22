@@ -1,21 +1,18 @@
-package com.nequi.dynamodb.dto;
+package com.nequi.model.order;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderDto {
-    String pk;
-    String sk;
-    String type;
-    String status;
+@Builder(toBuilder = true)
+public class Order {
+    String id;
     String eventId;
     Integer quantity;
+    String status;
     Long expiresAt;
 }

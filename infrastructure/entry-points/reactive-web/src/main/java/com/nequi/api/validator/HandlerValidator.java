@@ -56,7 +56,7 @@ public class HandlerValidator {
         rules.add(new ValidationRule(ValidatorUtility.isValidUuid(requestId), GeneralMessage.INVALID_REQUEST_ID));
 
         rules.add(new ValidationRule(ValidatorUtility.isValidUuid(createOrderRequest.getEventId()), GeneralMessage.INVALID_ID));
-        rules.add(new ValidationRule(ValidatorUtility.isValidNumeric(createOrderRequest.getQuantity()), GeneralMessage.INVALID_ORDER_QUANTITY));
+        rules.add(new ValidationRule(ValidatorUtility.isValidQuantity(createOrderRequest.getQuantity()), GeneralMessage.INVALID_ORDER_QUANTITY));
 
         return processValidations(rules, "createOrder");
     }

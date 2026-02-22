@@ -1,8 +1,10 @@
 package com.nequi.dynamodb.mapper;
 
 import com.nequi.dynamodb.dto.EventDto;
+import com.nequi.dynamodb.dto.OrderDto;
 import com.nequi.dynamodb.dto.TicketDto;
 import com.nequi.model.event.Event;
+import com.nequi.model.order.Order;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,6 +15,7 @@ import org.mapstruct.factory.Mappers;
 public interface DynamoMapper {
 
     String BASE_EVENT_PK = "EVENT#";
+    String BASE_ORDER_PK = "ORDER#";
     String SK_METADATA = "METADATA";
     String TYPE_EVENT = "Event";
 
@@ -60,10 +63,29 @@ public interface DynamoMapper {
     @Mapping(target = "availability", source = "eventDto.availableCount")
     Event toDomainQueryEvent(EventDto eventDto);
 
+    @Mapping(target = "pk", source = "orderId", qualifiedByName = "buildOrderPk")
+    @Mapping(target = "sk", constant = SK_METADATA)
+    @Mapping(target = "type", constant = "Order")
+    @Mapping(target = "status", constant = "PENDING_CONFIRMATION")
+    @Mapping(target = "eventId", source = "order.eventId", qualifiedByName = "buildEventPk")
+    @Mapping(target = "quantity", source = "order.quantity")
+    OrderDto toOrderDto(Order order, String orderId);
+
+    @Mapping(target = "id", source = "orderDto.pk", qualifiedByName = "decodeId")
+    @Mapping(target = "eventId", source = "orderDto.eventId", qualifiedByName = "decodeId")
+    @Mapping(target = "quantity", source = "orderDto.quantity")
+    @Mapping(target = "status", source = "orderDto.status")
+    @Mapping(target = "expiresAt", source = "orderDto.expiresAt")
+    Order toDomainOrder(OrderDto orderDto);
+
+    @Named("buildOrderPk")
+    default String buildOrderPk(String orderId) {
+        return BASE_ORDER_PK.concat(orderId);
+    }
+
     @Named("decodeId")
     default String decodeId(String id) {
         return id.split("#")[1];
     }
-
 
 }

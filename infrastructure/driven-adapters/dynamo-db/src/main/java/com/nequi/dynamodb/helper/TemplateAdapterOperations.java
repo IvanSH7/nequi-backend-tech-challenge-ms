@@ -1,7 +1,6 @@
 package com.nequi.dynamodb.helper;
 
 import org.reactivecommons.utils.ObjectMapper;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.core.async.SdkPublisher;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncIndex;

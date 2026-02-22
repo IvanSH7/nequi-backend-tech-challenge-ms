@@ -32,4 +32,9 @@ public class TicketAdapter implements TicketingGateway {
                 .doOnError(error -> log.info("Dynamo Batch save Error", kv("error", error.getMessage())))
                 .onErrorMap(error -> new TechnicalException(error, GeneralMessage.INTERNAL_SERVER_ERROR));
     }
+
+    @Override
+    public Mono<Void> reserveTickets(String eventId, String orderId, Integer orderTickets) {
+        return null;
+    }
 }

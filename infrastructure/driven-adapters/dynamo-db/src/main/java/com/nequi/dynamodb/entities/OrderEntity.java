@@ -13,18 +13,22 @@ public class OrderEntity {
 
     @Getter(onMethod_ = {
             @DynamoDbPartitionKey,
-            @DynamoDbAttribute("PK")
+            @DynamoDbAttribute("pk")
     })
     private String pk;
     @Getter(onMethod_ = {
             @DynamoDbSortKey,
-            @DynamoDbAttribute("SK")
+            @DynamoDbAttribute("sk")
     })
     private String sk;
     @Getter(onMethod_ = {@DynamoDbAttribute("type")})
     private String type;
     @Getter(onMethod_ = {@DynamoDbAttribute("status")})
     private String status;
+    @Getter(onMethod_ = {@DynamoDbAttribute("eventId")})
+    private String eventId;
+    @Getter(onMethod_ = {@DynamoDbAttribute("quantity")})
+    private Integer quantity;
     @Getter(onMethod_ = {@DynamoDbAttribute("expiresAt")})
     private Long expiresAt;
 
