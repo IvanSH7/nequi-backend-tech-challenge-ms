@@ -7,6 +7,7 @@ public class Constants {
 
     public static final String HEADER_X_REQUEST_ID = "x-request-id";
     public static final String EXCEPTION = "Exception";
+    public static final String ERROR = "error";
     public static final String CREATE_EVENT_METHOD_NAME = "create-event";
     public static final String QUERY_EVENTS_METHOD_NAME = "query-events";
     public static final String QUERY_EVENT_METHOD_NAME = "query-event";

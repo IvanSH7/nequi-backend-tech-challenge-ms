@@ -36,7 +36,7 @@ management:
     baggage:
       correlation:
         fields:
-        - "x-request-id"
+          - "x-request-id"
       remote-fields: "x-request-id"
 adapter:
   aws:
@@ -57,12 +57,12 @@ entrypoint:
       purchase:
         wait-time-seconds: 20
         max-number-of-messages: 10
-        visibility-timeout-seconds: 10
+        visibility-timeout-seconds: 30
         number-of-threads: 1
       release:
         wait-time-seconds: 20
         max-number-of-messages: 10
-        visibility-timeout-seconds: 10
+        visibility-timeout-seconds: 30
         number-of-threads: 1
 resilience4j.circuitbreaker:
   circuit-breaker-aspect-order: 1

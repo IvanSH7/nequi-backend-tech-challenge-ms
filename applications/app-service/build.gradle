@@ -5,7 +5,6 @@ dependencies {
 	implementation project(':sqs-sender')
 	implementation 'org.reactivecommons.utils:object-mapper:0.1.0'
 	implementation project(':dynamo-db')
-	implementation project(':metrics')
 	implementation 'software.amazon.awssdk:sts'
 	implementation project(':validator')
 	implementation project(':reactive-web')

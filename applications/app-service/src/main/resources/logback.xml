@@ -13,7 +13,6 @@
             <jsonGeneratorDecorator class="net.logstash.logback.mask.MaskingJsonGeneratorDecorator">
                 <defaultMask>**********</defaultMask>
                 <!-- EXAMPLES -->
-                <path>documentNumber</path>
             </jsonGeneratorDecorator>
         </encoder>
     </appender>

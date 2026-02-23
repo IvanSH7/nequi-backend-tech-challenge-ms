@@ -12,8 +12,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 
 @UtilityClass
 public class HandlerValidator {
@@ -71,14 +69,6 @@ public class HandlerValidator {
                 .collect(() -> new BeanPropertyBindingResult(new Object(), objectName),
                         (errors, errorMessage) -> errors.reject(errorMessage.getExternalCode(), errorMessage.getExternalMessage())
                 );
-    }
-
-    private static <T, R> ValidationRule createRule(T parent, Function<T, R> getter, Function<R, Mono<Boolean>> validator, GeneralMessage errorMessage) {
-        Mono<Boolean> validationMono = Optional.ofNullable(parent)
-                .map(getter)
-                .map(validator)
-                .orElse(Mono.just(Boolean.FALSE));
-        return new ValidationRule(validationMono, errorMessage);
     }
 
 }
