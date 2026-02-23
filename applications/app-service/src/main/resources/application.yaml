@@ -64,3 +64,114 @@ entrypoint:
         max-number-of-messages: 10
         visibility-timeout-seconds: 10
         number-of-threads: 1
+resilience4j.circuitbreaker:
+  circuit-breaker-aspect-order: 1
+  configs:
+    default:
+      register-health-indicator: true
+  instances:
+    create-event:
+      base-config: "default"
+      failure-rate-threshold: "${CREATE_EVENT_HTTP_FAILURE_RATE_THRESHOLD:30}"
+      slow-call-rate-threshold: "${CREATE_EVENT_HTTP_SLOW_CALL_RATE_THRESHOLD:30}"
+      slow-call-duration-threshold: "${CREATE_EVENT_HTTP_SLOW_CALL_DURATION_THRESHOLD:1s}"
+      sliding-window-type: "${CREATE_EVENT_HTTP_SLIDING_WINDOW_TYPE:TIME_BASED}"
+      sliding-window-size: "${CREATE_EVENT_HTTP_SLIDING_WINDOW_SIZE:30}"
+      minimum-number-of-calls: "${CREATE_EVENT_HTTP_MIN_NUMBER_CALLS:10}"
+      wait-duration-in-open-state: "${CREATE_EVENT_HTTP_WAIT_DURATION_OPEN_STATE:30s}"
+      max-wait-duration-in-half-open-state: "${CREATE_EVENT_HTTP_MAX_WAIT_DURATION_HALF_OPEN_STATE:60s}"
+      permitted-number-of-calls-in-half-open-state: "${CREATE_EVENT_HTTP_PERMITTED_CALLS_HALF_OPEN_STATE:10}"
+      automatic-transition-from-open-to-half-open-enabled: "${CREATE_EVENT_HTTP_AUTO_TRANS_OPEN_TO_HALF_OPEN_STATE:false}"
+      record-exceptions: "${CREATE_EVENT_HTTP_RECORD_EXCEPTIONS:}"
+      ignore-exceptions:
+        - com.nequi.model.exception.BusinessException
+    query-events:
+      base-config: "default"
+      failure-rate-threshold: "${QUERY_EVENTS_HTTP_FAILURE_RATE_THRESHOLD:30}"
+      slow-call-rate-threshold: "${QUERY_EVENTS_HTTP_SLOW_CALL_RATE_THRESHOLD:30}"
+      slow-call-duration-threshold: "${QUERY_EVENTS_HTTP_SLOW_CALL_DURATION_THRESHOLD:1s}"
+      sliding-window-type: "${QUERY_EVENTS_HTTP_SLIDING_WINDOW_TYPE:TIME_BASED}"
+      sliding-window-size: "${QUERY_EVENTS_HTTP_SLIDING_WINDOW_SIZE:30}"
+      minimum-number-of-calls: "${QUERY_EVENTS_HTTP_MIN_NUMBER_CALLS:10}"
+      wait-duration-in-open-state: "${QUERY_EVENTS_HTTP_WAIT_DURATION_OPEN_STATE:30s}"
+      max-wait-duration-in-half-open-state: "${QUERY_EVENTS_HTTP_MAX_WAIT_DURATION_HALF_OPEN_STATE:60s}"
+      permitted-number-of-calls-in-half-open-state: "${QUERY_EVENTS_HTTP_PERMITTED_CALLS_HALF_OPEN_STATE:10}"
+      automatic-transition-from-open-to-half-open-enabled: "${QUERY_EVENTS_HTTP_AUTO_TRANS_OPEN_TO_HALF_OPEN_STATE:false}"
+      record-exceptions: "${QUERY_EVENTS_HTTP_RECORD_EXCEPTIONS:}"
+      ignore-exceptions:
+        - com.nequi.model.exception.BusinessException
+    query-event:
+      base-config: "default"
+      failure-rate-threshold: "${QUERY_EVENT_HTTP_FAILURE_RATE_THRESHOLD:30}"
+      slow-call-rate-threshold: "${QUERY_EVENT_HTTP_SLOW_CALL_RATE_THRESHOLD:30}"
+      slow-call-duration-threshold: "${QUERY_EVENT_HTTP_SLOW_CALL_DURATION_THRESHOLD:1s}"
+      sliding-window-type: "${QUERY_EVENT_HTTP_SLIDING_WINDOW_TYPE:TIME_BASED}"
+      sliding-window-size: "${QUERY_EVENT_HTTP_SLIDING_WINDOW_SIZE:30}"
+      minimum-number-of-calls: "${QUERY_EVENT_HTTP_MIN_NUMBER_CALLS:10}"
+      wait-duration-in-open-state: "${QUERY_EVENT_HTTP_WAIT_DURATION_OPEN_STATE:30s}"
+      max-wait-duration-in-half-open-state: "${QUERY_EVENT_HTTP_MAX_WAIT_DURATION_HALF_OPEN_STATE:60s}"
+      permitted-number-of-calls-in-half-open-state: "${QUERY_EVENT_HTTP_PERMITTED_CALLS_HALF_OPEN_STATE:10}"
+      automatic-transition-from-open-to-half-open-enabled: "${QUERY_EVENT_HTTP_AUTO_TRANS_OPEN_TO_HALF_OPEN_STATE:false}"
+      record-exceptions: "${QUERY_EVENT_HTTP_RECORD_EXCEPTIONS:}"
+      ignore-exceptions:
+        - com.nequi.model.exception.BusinessException
+    query-availability:
+      base-config: "default"
+      failure-rate-threshold: "${QUERY_AVAILABILITY_HTTP_FAILURE_RATE_THRESHOLD:30}"
+      slow-call-rate-threshold: "${QUERY_AVAILABILITY_HTTP_SLOW_CALL_RATE_THRESHOLD:30}"
+      slow-call-duration-threshold: "${QUERY_AVAILABILITY_HTTP_SLOW_CALL_DURATION_THRESHOLD:1s}"
+      sliding-window-type: "${QUERY_AVAILABILITY_HTTP_SLIDING_WINDOW_TYPE:TIME_BASED}"
+      sliding-window-size: "${QUERY_AVAILABILITY_HTTP_SLIDING_WINDOW_SIZE:30}"
+      minimum-number-of-calls: "${QUERY_AVAILABILITY_HTTP_MIN_NUMBER_CALLS:10}"
+      wait-duration-in-open-state: "${QUERY_AVAILABILITY_HTTP_WAIT_DURATION_OPEN_STATE:30s}"
+      max-wait-duration-in-half-open-state: "${QUERY_AVAILABILITY_HTTP_MAX_WAIT_DURATION_HALF_OPEN_STATE:60s}"
+      permitted-number-of-calls-in-half-open-state: "${QUERY_AVAILABILITY_HTTP_PERMITTED_CALLS_HALF_OPEN_STATE:10}"
+      automatic-transition-from-open-to-half-open-enabled: "${QUERY_AVAILABILITY_HTTP_AUTO_TRANS_OPEN_TO_HALF_OPEN_STATE:false}"
+      record-exceptions: "${QUERY_AVAILABILITY_HTTP_RECORD_EXCEPTIONS:}"
+      ignore-exceptions:
+        - com.nequi.model.exception.BusinessException
+    create-order:
+      base-config: "default"
+      failure-rate-threshold: "${CREATE_ORDER_HTTP_FAILURE_RATE_THRESHOLD:30}"
+      slow-call-rate-threshold: "${CREATE_ORDER_HTTP_SLOW_CALL_RATE_THRESHOLD:30}"
+      slow-call-duration-threshold: "${CREATE_ORDER_HTTP_SLOW_CALL_DURATION_THRESHOLD:1s}"
+      sliding-window-type: "${CREATE_ORDER_HTTP_SLIDING_WINDOW_TYPE:TIME_BASED}"
+      sliding-window-size: "${CREATE_ORDER_HTTP_SLIDING_WINDOW_SIZE:30}"
+      minimum-number-of-calls: "${CREATE_ORDER_HTTP_MIN_NUMBER_CALLS:10}"
+      wait-duration-in-open-state: "${CREATE_ORDER_HTTP_WAIT_DURATION_OPEN_STATE:30s}"
+      max-wait-duration-in-half-open-state: "${CREATE_ORDER_HTTP_MAX_WAIT_DURATION_HALF_OPEN_STATE:60s}"
+      permitted-number-of-calls-in-half-open-state: "${CREATE_ORDER_HTTP_PERMITTED_CALLS_HALF_OPEN_STATE:10}"
+      automatic-transition-from-open-to-half-open-enabled: "${CREATE_ORDER_HTTP_AUTO_TRANS_OPEN_TO_HALF_OPEN_STATE:false}"
+      record-exceptions: "${CREATE_ORDER_HTTP_RECORD_EXCEPTIONS:}"
+      ignore-exceptions:
+        - com.nequi.model.exception.BusinessException
+    query-order:
+      base-config: "default"
+      failure-rate-threshold: "${QUERY_ORDER_HTTP_FAILURE_RATE_THRESHOLD:30}"
+      slow-call-rate-threshold: "${QUERY_ORDER_HTTP_SLOW_CALL_RATE_THRESHOLD:30}"
+      slow-call-duration-threshold: "${QUERY_ORDER_HTTP_SLOW_CALL_DURATION_THRESHOLD:1s}"
+      sliding-window-type: "${QUERY_ORDER_HTTP_SLIDING_WINDOW_TYPE:TIME_BASED}"
+      sliding-window-size: "${QUERY_ORDER_HTTP_SLIDING_WINDOW_SIZE:30}"
+      minimum-number-of-calls: "${QUERY_ORDER_HTTP_MIN_NUMBER_CALLS:10}"
+      wait-duration-in-open-state: "${QUERY_ORDER_HTTP_WAIT_DURATION_OPEN_STATE:30s}"
+      max-wait-duration-in-half-open-state: "${QUERY_ORDER_HTTP_MAX_WAIT_DURATION_HALF_OPEN_STATE:60s}"
+      permitted-number-of-calls-in-half-open-state: "${QUERY_ORDER_HTTP_PERMITTED_CALLS_HALF_OPEN_STATE:10}"
+      automatic-transition-from-open-to-half-open-enabled: "${QUERY_ORDER_HTTP_AUTO_TRANS_OPEN_TO_HALF_OPEN_STATE:false}"
+      record-exceptions: "${QUERY_ORDER_HTTP_RECORD_EXCEPTIONS:}"
+      ignore-exceptions:
+        - com.nequi.model.exception.BusinessException
+    pay-order:
+      base-config: "default"
+      failure-rate-threshold: "${PAY_ORDER_HTTP_FAILURE_RATE_THRESHOLD:30}"
+      slow-call-rate-threshold: "${PAY_ORDER_HTTP_SLOW_CALL_RATE_THRESHOLD:30}"
+      slow-call-duration-threshold: "${PAY_ORDER_HTTP_SLOW_CALL_DURATION_THRESHOLD:1s}"
+      sliding-window-type: "${PAY_ORDER_HTTP_SLIDING_WINDOW_TYPE:TIME_BASED}"
+      sliding-window-size: "${PAY_ORDER_HTTP_SLIDING_WINDOW_SIZE:30}"
+      minimum-number-of-calls: "${PAY_ORDER_HTTP_MIN_NUMBER_CALLS:10}"
+      wait-duration-in-open-state: "${PAY_ORDER_HTTP_WAIT_DURATION_OPEN_STATE:30s}"
+      max-wait-duration-in-half-open-state: "${PAY_ORDER_HTTP_MAX_WAIT_DURATION_HALF_OPEN_STATE:60s}"
+      permitted-number-of-calls-in-half-open-state: "${PAY_ORDER_HTTP_PERMITTED_CALLS_HALF_OPEN_STATE:10}"
+      automatic-transition-from-open-to-half-open-enabled: "${PAY_ORDER_HTTP_AUTO_TRANS_OPEN_TO_HALF_OPEN_STATE:false}"
+      record-exceptions: "${PAY_ORDER_HTTP_RECORD_EXCEPTIONS:}"
+      ignore-exceptions:
+        - com.nequi.model.exception.BusinessException
