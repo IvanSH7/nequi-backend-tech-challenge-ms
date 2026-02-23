@@ -29,7 +29,7 @@ public class SqsFifoProcessor implements Function<Message, Mono<Void>> {
                 .flatMap(processOrderMessage -> orderUseCase.process(MAPPER.toDomain(processOrderMessage)))
                 .doOnSubscribe(subscription -> log.info("SQS Incoming Order to Process", kv("order", message.body())))
                 .doOnSuccess(orderId -> log.info("SQS Successful Processed Order", kv("orderId", orderId)))
-                .doOnError(error -> log.error("SQS Error Trying to Process Order", kv("processOrderError", error.getMessage())))
+                .doOnError(error -> log.error("SQS Error Trying to Process Order", kv("processOrderError", error)))
                 .then();
     }
 }

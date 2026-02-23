@@ -24,7 +24,7 @@ public class SqsStandardProcessor implements Function<Message, Mono<Void>> {
                 .doOnSubscribe(subscription -> log.info("SQS Incoming Release Order", kv("orderId", message.body())))
                 .flatMap(orderUseCase::release)
                 .doOnSuccess(success -> log.info("SQS Successful Released Order", kv("orderId", message.body())))
-                .doOnError(error -> log.error("SQS Error Trying to Release Order", kv("releaseOrderError", error.getMessage())))
+                .doOnError(error -> log.error("SQS Error Trying to Release Order", kv("releaseOrderError", error)))
                 .then();
     }
 }

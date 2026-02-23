@@ -92,7 +92,6 @@ public class SQSConfig {
     }
 
 
-
     private AwsCredentialsProviderChain getProviderChain() {
         return AwsCredentialsProviderChain.builder()
                 .addCredentialsProvider(EnvironmentVariableCredentialsProvider.create())

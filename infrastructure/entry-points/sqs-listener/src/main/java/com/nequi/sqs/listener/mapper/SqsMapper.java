@@ -15,5 +15,4 @@ public interface SqsMapper {
 
     Order toDomain(ProcessOrderMessage processOrderMessage);
 
-
 }
