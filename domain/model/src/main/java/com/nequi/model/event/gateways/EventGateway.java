@@ -7,9 +7,9 @@ import java.util.List;
 
 public interface EventGateway {
 
-    Mono<String> createEvent(Event event);
-    Mono<Void> updateEvent(String eventId);
+    Mono<Void> createEvent(Event event, String eventId);
+    Mono<Void> updateEvent(String eventId, String status);
     Mono<List<Event>> queryEvents();
-    Mono<Event> queryEvent(String eventId);
+    Mono<Event> getEvent(String eventId);
 
 }

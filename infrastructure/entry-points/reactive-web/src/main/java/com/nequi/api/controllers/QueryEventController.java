@@ -34,7 +34,7 @@ public class QueryEventController {
                                 .flatMap(event ->
                                         buildResponse(Operation.QUERY_EVENT, GeneralMessage.SUCCESS, requestId, MAPPER.toQueryEventDataResponse(event)))
                                 .doOnError(Predicate.not(ServiceException.class::isInstance), error ->
-                                        log.info("Error trying to query and event", kv("Error", error.getMessage())))
+                                        log.info("Error trying to query an event", kv("error", error.getMessage())))
                                 .onErrorResume(ServiceException.class, error ->
                                         buildResponse(Operation.QUERY_EVENT, error.getGeneralMessage(), requestId))));
     }

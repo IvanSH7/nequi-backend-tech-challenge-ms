@@ -28,11 +28,22 @@ public class SQSSender implements ProcessorGateway {
     public Mono<Void> processOrder(Order order) {
         return Mono.fromCallable(() -> buildFifoRequest(order))
                 .flatMap(sendMessageRequest -> {
-                    log.info("SQS Process Order Request", kv("sendMessageRequest", sendMessageRequest.toString()));
+                    log.info("SQS Send Process Order Message", kv("processOrderMessage", sendMessageRequest.toString()));
                     return Mono.fromFuture(client.sendMessage(sendMessageRequest));
                 })
-                .doOnNext(response -> log.info("SQS Process Order Response", kv("queueResponse", response.messageId())))
-                .doOnError(error -> log.info("SQS Process Order Error", kv("queueError", error.getMessage())))
+                .doOnNext(response -> log.info("SQS Send Process Order Response", kv("processOrderResponse", response.messageId())))
+                .doOnError(error -> log.info("SQS Send Process Order Error", kv("processOrderError", error.getMessage())))
+                .onErrorMap(error -> new TechnicalException(error, GeneralMessage.INTERNAL_SERVER_ERROR))
+                .then();
+    }
+
+    @Override
+    public Mono<Void> scheduleOrderRelease(String orderId, Integer delay) {
+        return Mono.fromCallable(() -> buildStandardRequest(orderId, delay))
+                .flatMap(sendMessageRequest -> Mono.fromFuture(client.sendMessage(sendMessageRequest))
+                        .doOnSubscribe(sub -> log.info("SQS Send Schedule Order Release Message", kv("scheduleOrderReleaseMessage", sendMessageRequest.toString()))))
+                .doOnNext(response -> log.info("SQS Send Schedule Order Release Response", kv("scheduleOrderReleaseResponse", response.messageId())))
+                .doOnError(error -> log.info("SQS Send Schedule Order Release Error", kv("scheduleOrderReleaseError", error.getMessage())))
                 .onErrorMap(error -> new TechnicalException(error, GeneralMessage.INTERNAL_SERVER_ERROR))
                 .then();
     }
@@ -47,13 +58,12 @@ public class SQSSender implements ProcessorGateway {
     }
 
 
-    private SendMessageRequest buildStandardRequest(Object message) {
+    private SendMessageRequest buildStandardRequest(String orderId, Integer delay) {
         return SendMessageRequest.builder()
-                .delaySeconds(Integer.valueOf(releaseDelay))
+                .delaySeconds(delay)
                 .queueUrl(releaseQueueUrl)
-                .messageBody(objectMapper.writeValueAsString(message))
+                .messageBody(orderId)
                 .build();
     }
-
 
 }

@@ -37,11 +37,11 @@ public interface DynamoMapper {
     @Mapping(target = "status", constant = "PUBLISHED")
     EventDto toUpdateEventDto(String eventId);
 
+
     @Mapping(target = "pk", source = "eventId", qualifiedByName = "buildEventPk")
     @Mapping(target = "sk", source = "ticketId", qualifiedByName = "buildTicketSk")
     @Mapping(target = "type", constant = "Ticket")
     @Mapping(target = "status", constant = "AVAILABLE")
-    @Mapping(target = "version", constant = "1")
     TicketDto toTicketDto(String eventId, Integer ticketId);
 
     @Named("buildEventPk")
@@ -61,7 +61,7 @@ public interface DynamoMapper {
     @Mapping(target = "status", source = "eventDto.status")
     @Mapping(target = "capacity", source = "eventDto.totalCapacity")
     @Mapping(target = "availability", source = "eventDto.availableCount")
-    Event toDomainQueryEvent(EventDto eventDto);
+    Event toDomainEvent(EventDto eventDto);
 
     @Mapping(target = "pk", source = "orderId", qualifiedByName = "buildOrderPk")
     @Mapping(target = "sk", constant = SK_METADATA)
@@ -70,6 +70,12 @@ public interface DynamoMapper {
     @Mapping(target = "eventId", source = "order.eventId", qualifiedByName = "buildEventPk")
     @Mapping(target = "quantity", source = "order.quantity")
     OrderDto toOrderDto(Order order, String orderId);
+
+    @Mapping(target = "pk", source = "orderId", qualifiedByName = "buildOrderPk")
+    @Mapping(target = "sk", constant = SK_METADATA)
+    @Mapping(target = "status", source = "status")
+    @Mapping(target = "expiresAt", source = "ttl")
+    OrderDto toUpdateOrderDto(String orderId, String status, Long ttl);
 
     @Mapping(target = "id", source = "orderDto.pk", qualifiedByName = "decodeId")
     @Mapping(target = "eventId", source = "orderDto.eventId", qualifiedByName = "decodeId")

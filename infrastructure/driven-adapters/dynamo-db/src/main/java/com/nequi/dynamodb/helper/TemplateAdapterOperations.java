@@ -3,11 +3,7 @@ package com.nequi.dynamodb.helper;
 import org.reactivecommons.utils.ObjectMapper;
 import reactor.core.publisher.Mono;
 import software.amazon.awssdk.core.async.SdkPublisher;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncIndex;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbAsyncTable;
-import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedAsyncClient;
-import software.amazon.awssdk.enhanced.dynamodb.Key;
-import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.*;
 import software.amazon.awssdk.enhanced.dynamodb.model.*;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
@@ -80,6 +76,24 @@ public abstract class TemplateAdapterOperations<E, K, V> {
                         .sortValue(AttributeValue.builder().s((String) sortKey).build())
                         .build()))
                 .map(this::toModel);
+    }
+
+    public DynamoDbAsyncTable<V> getTable() {
+        return this.table;
+    }
+
+    public Mono<Void> executeTransaction(TransactWriteItemsEnhancedRequest transactionRequest) {
+        return Mono.fromFuture(enhancedClient.transactWriteItems(transactionRequest)).then();
+    }
+
+    public UpdateItemEnhancedRequest<V> buildUpdateTransaction(E model, Expression conditionExpression) {
+        UpdateItemEnhancedRequest.Builder<V> builder = UpdateItemEnhancedRequest.builder(dataClass)
+                .item(toEntity(model))
+                .ignoreNullsMode(IgnoreNullsMode.SCALAR_ONLY);
+        if (conditionExpression != null) {
+            builder.conditionExpression(conditionExpression);
+        }
+        return builder.build();
     }
 
     public Mono<E> delete(E model) {

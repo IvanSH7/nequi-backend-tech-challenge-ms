@@ -2,10 +2,7 @@ package com.nequi.dynamodb.entities;
 
 import lombok.Data;
 import lombok.Getter;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
-import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSortKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 @Data
 @DynamoDbBean
@@ -21,15 +18,15 @@ public class OrderEntity {
             @DynamoDbAttribute("sk")
     })
     private String sk;
-    @Getter(onMethod_ = {@DynamoDbAttribute("type")})
+    @Getter(onMethod_ = {@DynamoDbAttribute("type"), @DynamoDbIgnoreNulls})
     private String type;
     @Getter(onMethod_ = {@DynamoDbAttribute("status")})
     private String status;
-    @Getter(onMethod_ = {@DynamoDbAttribute("eventId")})
+    @Getter(onMethod_ = {@DynamoDbAttribute("eventId"), @DynamoDbIgnoreNulls})
     private String eventId;
-    @Getter(onMethod_ = {@DynamoDbAttribute("quantity")})
+    @Getter(onMethod_ = {@DynamoDbAttribute("quantity"), @DynamoDbIgnoreNulls})
     private Integer quantity;
-    @Getter(onMethod_ = {@DynamoDbAttribute("expiresAt")})
+    @Getter(onMethod_ = {@DynamoDbAttribute("expiresAt"), @DynamoDbIgnoreNulls})
     private Long expiresAt;
 
 }

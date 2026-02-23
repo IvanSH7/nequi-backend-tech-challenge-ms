@@ -25,7 +25,9 @@ public enum GeneralMessage {
     FORBIDDEN(GeneralMessage.STATUS_CODE_403, "N403000", "Forbidden"),
     NOT_FOUND_1(GeneralMessage.STATUS_CODE_404, "N404001", NOT_FOUND.externalMessage),
 
-    // Internal Errors
+    // ###### Internal Errors
+
+    // ### REQUESTS VALIDATION
     INVALID_REQUEST_ID(BAD_REQUEST.code, "VAL001", "Invalid x-request-id header"),
     INVALID_ID(BAD_REQUEST.code, "VAL002", "Invalid id"),
     INVALID_EVENT_NAME(BAD_REQUEST.code, "VAL003", "Invalid event name"),
@@ -34,6 +36,10 @@ public enum GeneralMessage {
     INVALID_EVENT_CAPACITY(BAD_REQUEST.code, "VAL006", "Invalid event capacity"),
     INVALID_ORDER_QUANTITY(BAD_REQUEST.code, "VAL007", "Invalid order quantity"),
 
+    // ### ASYNC ERRORS
+    EVENT_NOT_FOUND( "", "ENF000", "Event Not Found"),
+    ORDER_NOT_FOUND( "", "ONF000", "Order Not Found"),
+    UNAVAILABLE_TICKETS( "", "OPE000", "Unavailable Tickets"),
 
 
 

@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
+import java.util.UUID;
 
 
 @RequiredArgsConstructor
@@ -20,13 +21,14 @@ public class EventUseCase {
     private final TicketingGateway ticketingGateway;
 
     public Mono<String> create(Event event) {
-        return eventGateway.createEvent(event)
-                .doOnSuccess(eventId -> ticketingGateway.createTickets(eventId, event.getCapacity())
-                        .then(Mono.defer(() -> eventGateway.updateEvent(eventId)))
-                        .onErrorResume(error -> Mono.empty())
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .subscribe()
-                );
+        return Mono.just(UUID.randomUUID().toString())
+                .flatMap(eventId -> eventGateway.createEvent(event, eventId)
+                        .doOnSuccess(unUsed -> ticketingGateway.createTickets(eventId, event.getCapacity())
+                                .then(Mono.defer(() -> eventGateway.updateEvent(eventId, "PUBLISHED")))
+                                .onErrorResume(error -> Mono.empty())
+                                .subscribeOn(Schedulers.boundedElastic())
+                                .subscribe()
+                        ).thenReturn(eventId));
     }
 
     public Mono<List<Event>> queryEvents() {
@@ -34,9 +36,8 @@ public class EventUseCase {
     }
 
     public Mono<Event> queryEvent(String eventId) {
-        return eventGateway.queryEvent(eventId)
+        return eventGateway.getEvent(eventId)
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new BusinessException(GeneralMessage.NOT_FOUND))));
     }
-
 
 }

@@ -10,6 +10,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class QueryOrderDataResponse {
-    String orderId;
-    String state;
+    String status;
 }

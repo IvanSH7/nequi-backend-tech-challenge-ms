@@ -3,7 +3,6 @@ package com.nequi.sqs.listener;
 import com.nequi.sqs.listener.dto.ProcessOrderMessage;
 import com.nequi.usecase.order.OrderUseCase;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -27,11 +26,10 @@ public class SqsFifoProcessor implements Function<Message, Mono<Void>> {
     @Override
     public Mono<Void> apply(Message message) {
         return Mono.fromCallable(() -> objectMapper.readValue(message.body(), ProcessOrderMessage.class))
-                .flatMap(processOrderMessage -> Mono.justOrEmpty(orderUseCase.process(MAPPER.toDomain(processOrderMessage))))
-                .doOnSubscribe(subscription -> log.info("Message to process", kv("processMessage", message.body())))
-                .doOnSuccess(success -> log.info("Successful Order Process", kv("successfulOrderProcess", message.body())))
-                .doOnError(error -> log.error("Process Order error", kv("processOrderError", error)))
-                .onErrorResume(error -> Mono.empty())
+                .flatMap(processOrderMessage -> orderUseCase.process(MAPPER.toDomain(processOrderMessage)))
+                .doOnSubscribe(subscription -> log.info("SQS Incoming Order to Process", kv("order", message.body())))
+                .doOnSuccess(orderId -> log.info("SQS Successful Processed Order", kv("orderId", orderId)))
+                .doOnError(error -> log.error("SQS Error Trying to Process Order", kv("processOrderError", error.getMessage())))
                 .then();
     }
 }

@@ -36,8 +36,7 @@ public interface HandlerMapper {
     @Mapping(target = "remainingCapacity", source = "availability")
     QueryAvailabilityDataResponse toQueryAvailabilityDataResponse(String availability);
 
-    @Mapping(target = "orderId", constant = "Test")
-    @Mapping(target = "state", constant = "RESERVED" )
-    QueryOrderDataResponse toQueryOrderDataResponse(String nothing);
+    @Mapping(target = "status", source = "order.status" )
+    QueryOrderDataResponse toQueryOrderDataResponse(Order order);
 
 }

@@ -3,6 +3,7 @@ package com.nequi.api.controllers;
 import com.nequi.api.validator.HandlerValidator;
 import com.nequi.model.enums.GeneralMessage;
 import com.nequi.model.enums.Operation;
+import com.nequi.usecase.order.OrderUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,8 @@ import static com.nequi.api.util.Utils.buildResponse;
 @Service
 @RequiredArgsConstructor
 public class PayOrderController {
+
+    private final OrderUseCase orderUseCase;
 
     public Mono<ServerResponse> execute(String orderId, String requestId) {
         return HandlerValidator.validateQuery(orderId, requestId)

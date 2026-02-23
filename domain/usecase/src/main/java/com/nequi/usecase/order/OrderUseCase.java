@@ -35,8 +35,22 @@ public class OrderUseCase {
                 .map(Order::getId);
     }
 
-    public Mono<Void> process(Order order) {
-        return ticketingGateway.reserveTickets(order.getEventId(), order.getId(), order.getQuantity());
+    public Mono<String> process(Order order) {
+        return ticketingGateway.reserveTickets(order.getEventId(), order.getId(), order.getQuantity(), 120)
+                .then(Mono.defer(() -> processorGateway.scheduleOrderRelease(order.getId(), 120)))
+                .onErrorResume(BusinessException.class, e -> orderGateway.updateOrder(order.getId(), "FAILED"))
+                .thenReturn(order.getId());
+    }
+
+    public Mono<Void> release(String orderId) {
+        return orderGateway.getOrder(orderId)
+                .filter(order -> "RESERVED".equals(order.getStatus()))
+                .flatMap(order -> ticketingGateway.releaseTickets(order.getEventId(), order.getId()));
+    }
+
+    public Mono<Order> queryOrder(String orderId) {
+        return orderGateway.getOrder(orderId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new BusinessException(GeneralMessage.NOT_FOUND))));
     }
 
 }

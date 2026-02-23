@@ -3,6 +3,7 @@ package com.nequi.dynamodb.entities;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 import lombok.Getter;
+import software.amazon.awssdk.enhanced.dynamodb.extensions.annotations.DynamoDbVersionAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
@@ -30,8 +31,8 @@ public class TicketEntity {
     private String type;
     @Getter(onMethod_ = {@DynamoDbAttribute("status")})
     private String status;
-    @Getter(onMethod_ = {@DynamoDbAttribute("version")})
-    private Integer version;
+    @Getter(onMethod_ = {@DynamoDbAttribute("version"), @DynamoDbVersionAttribute})
+    private Long version;
     @Getter(onMethod_ = {@DynamoDbAttribute("orderId"), @DynamoDbIgnoreNulls})
     @JsonInclude(NON_NULL)
     private String orderId;

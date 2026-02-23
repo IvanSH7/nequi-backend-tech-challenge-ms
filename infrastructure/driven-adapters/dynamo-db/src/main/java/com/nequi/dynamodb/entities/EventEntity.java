@@ -2,6 +2,7 @@ package com.nequi.dynamodb.entities;
 
 import lombok.Data;
 import lombok.Getter;
+import software.amazon.awssdk.enhanced.dynamodb.extensions.annotations.DynamoDbVersionAttribute;
 import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.*;
 
 
@@ -36,5 +37,7 @@ public class EventEntity {
     private String place;
     @Getter(onMethod_ = {@DynamoDbAttribute("date"), @DynamoDbIgnoreNulls})
     private String date;
+    @Getter(onMethod_ = {@DynamoDbAttribute("version"), @DynamoDbVersionAttribute})
+    private Long version;
 
 }

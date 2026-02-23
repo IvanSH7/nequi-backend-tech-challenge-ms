@@ -29,4 +29,5 @@ public class EventDto {
     String place;
     @JsonInclude(NON_NULL)
     String date;
+    Integer version;
 }
