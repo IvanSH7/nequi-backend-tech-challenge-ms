@@ -53,4 +53,13 @@ public class OrderUseCase {
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new BusinessException(GeneralMessage.NOT_FOUND))));
     }
 
+    public Mono<Void> payOrder(String orderId) {
+        return orderGateway.getOrder(orderId)
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new BusinessException(GeneralMessage.NOT_FOUND))))
+                .filter(order -> "RESERVED".equals(order.getStatus()))
+                .switchIfEmpty(Mono.defer(() -> Mono.error(new BusinessException(GeneralMessage.PRECONDITION_FAILED))))
+                .flatMap(order -> ticketingGateway.confirmTickets(order.getEventId(), order.getId()))
+                .then();
+    }
+
 }

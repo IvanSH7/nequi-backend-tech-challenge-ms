@@ -88,6 +88,23 @@ public class TicketAdapter implements TicketingGateway {
                         .flatMap(event -> executeReleaseTransaction(event, orderId, tickets)));
     }
 
+    @Override
+    public Mono<Void> confirmTickets(String eventId, String orderId) {
+        QueryConditional queryConditional = QueryConditional.sortBeginsWith(
+                Key.builder().partitionValue("EVENT#" + eventId).sortValue("TICKET#").build());
+        Expression filterExpression = Expression.builder()
+                .expression("orderId = :orderId")
+                .putExpressionValue(":orderId", AttributeValue.builder().s(orderId).build())
+                .build();
+        QueryEnhancedRequest queryRequest = QueryEnhancedRequest.builder()
+                .queryConditional(queryConditional)
+                .filterExpression(filterExpression)
+                .build();
+
+        return ticketDynamoRepository.query(queryRequest)
+                .flatMap(tickets -> executeConfirmTransaction(orderId, tickets));
+    }
+
     private Mono<EventDto> getEventMetadata(String eventId) {
         return eventDynamoRepository.getById("EVENT#".concat(eventId), "METADATA");
     }
@@ -147,6 +164,35 @@ public class TicketAdapter implements TicketingGateway {
                         kv("orderId", orderId), kv("releaseWrite", txBuilder.toString())))
                 .doOnSuccess(supplier-> log.info("Dynamo Release Write Response", kv("orderId", orderId)))
                 .doOnError(error -> log.info("Dynamo Release Write Error", kv("orderId", orderId), kv("error", error.getMessage())))
+                .onErrorMap(e -> new TechnicalException(e, GeneralMessage.INTERNAL_SERVER_ERROR));
+    }
+
+    private Mono<Void> executeConfirmTransaction(String orderId, List<TicketDto> tickets) {
+        OrderDto orderUpdateDto = new OrderDto();
+        orderUpdateDto.setPk("ORDER#" + orderId);
+        orderUpdateDto.setSk("METADATA");
+        orderUpdateDto.setStatus("CONFIRMED");
+        TransactWriteItemsEnhancedRequest.Builder txBuilder = TransactWriteItemsEnhancedRequest.builder();
+        Expression orderCondition = Expression.builder()
+                .expression("#status = :reserved")
+                .putExpressionName("#status", "status")
+                .putExpressionValue(":reserved", AttributeValue.builder().s("RESERVED").build())
+                .build();
+        txBuilder.addUpdateItem(orderDynamoRepository.getTable(), orderDynamoRepository.buildUpdateTransaction(orderUpdateDto, orderCondition));
+        for (TicketDto ticketDto : tickets) {
+            ticketDto.setStatus("SOLD");
+            Expression ticketCondition = Expression.builder()
+                    .expression("#status = :reserved")
+                    .putExpressionName("#status", "status")
+                    .putExpressionValue(":reserved", AttributeValue.builder().s("RESERVED").build())
+                    .build();
+            txBuilder.addUpdateItem(ticketDynamoRepository.getTable(), ticketDynamoRepository.buildUpdateTransaction(ticketDto, ticketCondition));
+        }
+        return ticketDynamoRepository.executeTransaction(txBuilder.build())
+                .doOnSubscribe(sub -> log.info("Dynamo Confirm Write",
+                        kv("orderId", orderId), kv("confirmWrite", txBuilder.toString())))
+                .doOnSuccess(success -> log.info("Dynamo Confirm Write Response", kv("orderId", orderId)))
+                .doOnError(error -> log.info("Dynamo Confirm Write Error", kv("orderId", orderId), kv("error", error.getMessage())))
                 .onErrorMap(e -> new TechnicalException(e, GeneralMessage.INTERNAL_SERVER_ERROR));
     }
 

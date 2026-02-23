@@ -19,6 +19,7 @@ public enum GeneralMessage {
     BAD_REQUEST("400", "NEQ400", "Bad Request"),
     NOT_FOUND("404", "NEQ404", "Not Found"),
     CONFLICT("429", "NEQ409", "Conflict"),
+    PRECONDITION_FAILED("412", "NEQ412", "Precondition Failed"),
     UNPROCESSABLE_CONTENT("422", "NEQ422", "Unprocessable Content"),
 
     UNAUTHORIZED(GeneralMessage.STATUS_CODE_401, "N401000", "Unauthorized"),
