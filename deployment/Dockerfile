@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25-jdk-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 RUN addgroup -S nequigroup && adduser -S nequiuser -G nequigroup

@@ -25,7 +25,9 @@ services:
       start_period: 10s
 
   backend-app:
-    image: nequi-backend-ms:latest
+    build:
+      context: .
+      dockerfile: deployment/Dockerfile
     container_name: nequi-backend-app
     ports:
       - "9090:9090"
@@ -37,7 +39,6 @@ services:
       - AWS_SECRET_ACCESS_KEY=test
       - AWS_DYNAMO_ENDPOINT=http://localstack:4566
       - AWS_SQS_ENDPOINT=http://localstack:4566
-
       - AWS_SQS_PURCHASE_QUEUE_URL=http://localstack:4566/000000000000/purchase-queue-dev.fifo
       - AWS_SQS_RELEASE_QUEUE_URL=http://localstack:4566/000000000000/release-tickets-queue-dev
     depends_on:
