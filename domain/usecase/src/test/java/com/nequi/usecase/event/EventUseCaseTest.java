@@ -59,7 +59,7 @@ class EventUseCaseTest {
                 .verifyComplete();
         verify(eventGateway).createEvent(any(Event.class), anyString());
         verify(ticketingGateway).createTickets(anyString(), anyString());
-        verify(eventGateway).updateEvent(anyString(), eq(PUBLISHED.getName()));
+        verify(eventGateway, timeout(2000)).updateEvent(anyString(), eq(PUBLISHED.getName()));
         verify(eventGateway, times(1)).updateEvent(anyString(), anyString());
     }
 
