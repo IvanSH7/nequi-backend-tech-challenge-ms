@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 public enum EventStates {
 
     CREATING("CREATING"),
+    FAILED("FAILED"),
     PUBLISHED("PUBLISHED");
 
     private final String name;

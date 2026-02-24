@@ -16,6 +16,8 @@ import reactor.test.StepVerifier;
 
 import java.util.List;
 
+import static com.nequi.model.enums.EventStates.FAILED;
+import static com.nequi.model.enums.EventStates.PUBLISHED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -57,11 +59,12 @@ class EventUseCaseTest {
                 .verifyComplete();
         verify(eventGateway).createEvent(any(Event.class), anyString());
         verify(ticketingGateway).createTickets(anyString(), anyString());
-        verify(eventGateway).updateEvent(anyString(), anyString());
+        verify(eventGateway).updateEvent(anyString(), eq(PUBLISHED.getName()));
+        verify(eventGateway, times(1)).updateEvent(anyString(), anyString());
     }
 
     @Test
-    void shouldCreatePendingEvent() {
+    void shouldCreateEventFailedState() {
         given(eventGateway.createEvent(any(Event.class), anyString())).willReturn(Mono.empty());
         given(ticketingGateway.createTickets(anyString(), anyString())).willReturn(Mono.error(new RuntimeException("ticketing error")));
         StepVerifier.create(eventUseCase.create(event))
@@ -72,7 +75,8 @@ class EventUseCaseTest {
                 .verifyComplete();
         verify(eventGateway).createEvent(any(Event.class), anyString());
         verify(ticketingGateway).createTickets(anyString(), anyString());
-        verify(eventGateway, never()).updateEvent(anyString(), anyString());
+        verify(eventGateway, timeout(2000)).updateEvent(anyString(), eq(FAILED.getName()));
+        verify(eventGateway, times(1)).updateEvent(anyString(), anyString());
     }
 
     @Test

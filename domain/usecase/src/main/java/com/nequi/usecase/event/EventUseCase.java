@@ -12,6 +12,7 @@ import reactor.core.scheduler.Schedulers;
 import java.util.List;
 import java.util.UUID;
 
+import static com.nequi.model.enums.EventStates.FAILED;
 import static com.nequi.model.enums.EventStates.PUBLISHED;
 
 @RequiredArgsConstructor
@@ -25,7 +26,7 @@ public class EventUseCase {
                 .flatMap(eventId -> eventGateway.createEvent(event, eventId)
                         .doOnSuccess(unUsed -> ticketingGateway.createTickets(eventId, event.getCapacity())
                                 .then(Mono.defer(() -> eventGateway.updateEvent(eventId, PUBLISHED.getName())))
-                                .onErrorResume(error -> Mono.empty())
+                                .onErrorResume(e -> eventGateway.updateEvent(eventId, FAILED.getName()))
                                 .subscribeOn(Schedulers.boundedElastic())
                                 .subscribe()
                         ).thenReturn(eventId));
