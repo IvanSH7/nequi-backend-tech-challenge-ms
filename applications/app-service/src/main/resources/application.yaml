@@ -38,6 +38,9 @@ management:
         fields:
           - "x-request-id"
       remote-fields: "x-request-id"
+use-case:
+  order:
+    time-to-pay: "${TIME_TO_PAY:120}"
 adapter:
   aws:
     region: "${AWS_REGION:us-east-1}"

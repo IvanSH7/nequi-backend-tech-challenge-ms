@@ -22,6 +22,7 @@ public class OrderUseCase {
     private final OrderGateway orderGateway;
     private final ProcessorGateway processorGateway;
     private final TicketingGateway ticketingGateway;
+    private final Integer timeToPay;
 
     public Mono<String> create(Order order) {
         return eventUseCase.queryEvent(order.getEventId())
@@ -35,8 +36,8 @@ public class OrderUseCase {
     }
 
     public Mono<String> process(Order order) {
-        return ticketingGateway.reserveTickets(order.getEventId(), order.getId(), order.getQuantity(), 120)
-                .then(Mono.defer(() -> processorGateway.scheduleOrderRelease(order.getId(), 120)))
+        return ticketingGateway.reserveTickets(order.getEventId(), order.getId(), order.getQuantity(), timeToPay)
+                .then(Mono.defer(() -> processorGateway.scheduleOrderRelease(order.getId(), timeToPay)))
                 .onErrorResume(BusinessException.class, e -> orderGateway.updateOrder(order.getId(), OrderStates.FAILED.getName()))
                 .thenReturn(order.getId());
     }

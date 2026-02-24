@@ -28,7 +28,7 @@ public class SQSSenderConfig {
         return SqsAsyncClient.builder()
                 .endpointOverride(URI.create(endpoint))
                 .region(Region.of(region))
-                .credentialsProvider(ProfileCredentialsProvider.create("default"))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test")))
                 .build();
     }
 

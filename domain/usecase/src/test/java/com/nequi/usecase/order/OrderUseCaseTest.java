@@ -44,7 +44,7 @@ class OrderUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        orderUseCase = new OrderUseCase(eventUseCase, orderGateway, processorGateway, ticketingGateway);
+        orderUseCase = new OrderUseCase(eventUseCase, orderGateway, processorGateway, ticketingGateway, 120);
         order = Order.builder().id("order-1").eventId("evt-1").quantity(2).status(OrderStates.PENDING_CONFIRMATION.getName()).build();
         publishedEvent = Event.builder().id("evt-1").status(PUBLISHED.getName()).build();
     }

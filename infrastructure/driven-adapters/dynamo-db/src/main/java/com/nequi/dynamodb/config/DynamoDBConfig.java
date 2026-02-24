@@ -27,7 +27,7 @@ public class DynamoDBConfig {
     @Profile({"local"})
     public DynamoDbAsyncClient amazonDynamoDB() {
         return DynamoDbAsyncClient.builder()
-                .credentialsProvider(ProfileCredentialsProvider.create("default"))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create("test", "test")))
                 .region(Region.of(region))
                 .endpointOverride(URI.create(endpoint))
                 .build();
