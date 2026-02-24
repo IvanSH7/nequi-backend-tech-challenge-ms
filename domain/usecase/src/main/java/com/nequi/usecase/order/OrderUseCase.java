@@ -11,7 +11,6 @@ import com.nequi.model.ticketing.gateways.TicketingGateway;
 import com.nequi.usecase.event.EventUseCase;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import static com.nequi.model.enums.EventStates.PUBLISHED;
 
@@ -31,11 +30,8 @@ public class OrderUseCase {
                 .filter(event -> event.getStatus().equals(PUBLISHED.getName()))
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new BusinessException(GeneralMessage.CONFLICT))))
                 .flatMap(supplier -> orderGateway.createOrder(order)
-                        .doOnSuccess(createdOrder -> processorGateway.processOrder(createdOrder)
-                                .onErrorResume(error -> Mono.empty())
-                                .subscribeOn(Schedulers.boundedElastic())
-                                .subscribe()))
-                .map(Order::getId);
+                        .flatMap(createdOrder -> processorGateway.processOrder(createdOrder)
+                                .thenReturn(createdOrder.getId())));
     }
 
     public Mono<String> process(Order order) {

@@ -57,6 +57,14 @@ class ValidatorUtilityTest {
     }
 
     @Test
+    void shouldReturnInValidQuantity2() {
+        Mono<Boolean> result = ValidatorUtility.isValidQuantity(0);
+        StepVerifier.create(result)
+                .expectNext(false)
+                .verifyComplete();
+    }
+
+    @Test
     void shouldReturnValidNumeric() {
         Mono<Boolean> result = ValidatorUtility.isValidNumeric("12345");
         StepVerifier.create(result)

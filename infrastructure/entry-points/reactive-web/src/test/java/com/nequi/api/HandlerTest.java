@@ -143,6 +143,21 @@ class HandlerTest {
     }
 
     @Test
+    void shouldLogErrorOnCreateEvent() {
+        given(eventUseCase.create(any())).willReturn(Mono.error(new RuntimeException("unexpected")));
+        webTestClient.post()
+                .uri("/api/v1/events")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HEADER_X_REQUEST_ID, requestId)
+                .body(Mono.just(CreateEventRequest.builder()
+                        .name("Event1").place("Medellin").date("02/02/2027").capacity("10")
+                        .build()), CreateEventRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError();
+        verify(eventUseCase).create(any());
+    }
+
+    @Test
     void shouldReturnSuccessResponseOnQueryEvent() {
         HashMap<String, String> data = new HashMap<>();
         data.put("capacity", "10");
@@ -207,6 +222,17 @@ class HandlerTest {
                 });
         verify(eventUseCase).queryEvent(any());
         verifyNoInteractions(orderUseCase);
+    }
+
+    @Test
+    void shouldLogErrorOnQueryEvent() {
+        given(eventUseCase.queryEvent(any())).willReturn(Mono.error(new RuntimeException("unexpected")));
+        webTestClient.get()
+                .uri("/api/v1/events/9ed544f3-a1e9-4b17-bc4e-790574ae2efb")
+                .header(HEADER_X_REQUEST_ID, requestId)
+                .exchange()
+                .expectStatus().is5xxServerError();
+        verify(eventUseCase).queryEvent(any());
     }
 
     @Test
@@ -277,6 +303,17 @@ class HandlerTest {
     }
 
     @Test
+    void shouldLogErrorOnQueryEvents() {
+        given(eventUseCase.queryEvents()).willReturn(Mono.error(new RuntimeException("unexpected")));
+        webTestClient.get()
+                .uri("/api/v1/events")
+                .header(HEADER_X_REQUEST_ID, requestId)
+                .exchange()
+                .expectStatus().is5xxServerError();
+        verify(eventUseCase).queryEvents();
+    }
+
+    @Test
     void shouldReturnSuccessResponseOnQueryAvailability() {
         HashMap<String, String> data = new HashMap<>();
         data.put("remainingCapacity", "10");
@@ -331,6 +368,17 @@ class HandlerTest {
                 });
         verify(eventUseCase).queryEvent(any());
         verifyNoInteractions(orderUseCase);
+    }
+
+    @Test
+    void shouldLogErrorOnQueryAvailability() {
+        given(eventUseCase.queryEvent(any())).willReturn(Mono.error(new RuntimeException("unexpected")));
+        webTestClient.get()
+                .uri("/api/v1/events/9ed544f3-a1e9-4b17-bc4e-790574ae2efb/availability")
+                .header(HEADER_X_REQUEST_ID, requestId)
+                .exchange()
+                .expectStatus().is5xxServerError();
+        verify(eventUseCase).queryEvent(any());
     }
 
     @Test
@@ -400,6 +448,21 @@ class HandlerTest {
     }
 
     @Test
+    void shouldLogErrorOnCreateOrder() {
+        given(orderUseCase.create(any())).willReturn(Mono.error(new RuntimeException("unexpected")));
+        webTestClient.post()
+                .uri("/api/v1/orders")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HEADER_X_REQUEST_ID, requestId)
+                .body(Mono.just(CreateOrderRequest.builder()
+                        .eventId("9ed544f3-a1e9-4b17-bc4e-790574ae2efb").quantity(2)
+                        .build()), CreateOrderRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError();
+        verify(orderUseCase).create(any());
+    }
+
+    @Test
     void shouldReturnSuccessResponseOnQueryOrder() {
         HashMap<String, String> data = new HashMap<>();
         data.put("status", "RESERVED");
@@ -457,6 +520,17 @@ class HandlerTest {
     }
 
     @Test
+    void shouldLogErrorOnQueryOrder() {
+        given(orderUseCase.queryOrder(any())).willReturn(Mono.error(new RuntimeException("unexpected")));
+        webTestClient.get()
+                .uri("/api/v1/orders/74b7499a-72f0-4ba4-8e7f-bb2deb64f93b")
+                .header(HEADER_X_REQUEST_ID, requestId)
+                .exchange()
+                .expectStatus().is5xxServerError();
+        verify(orderUseCase).queryOrder(any());
+    }
+
+    @Test
     void shouldReturnSuccessResponseOnPayOrder() {
         given(orderUseCase.payOrder(any())).willReturn(Mono.empty());
         webTestClient.post()
@@ -509,6 +583,16 @@ class HandlerTest {
         verifyNoInteractions(eventUseCase);
     }
 
+    @Test
+    void shouldLogErrorOnPayOrder() {
+        given(orderUseCase.payOrder(any())).willReturn(Mono.error(new RuntimeException("unexpected")));
+        webTestClient.post()
+                .uri("/api/v1/orders/74b7499a-72f0-4ba4-8e7f-bb2deb64f93b/pay")
+                .header(HEADER_X_REQUEST_ID, requestId)
+                .exchange()
+                .expectStatus().is5xxServerError();
+        verify(orderUseCase).payOrder(any());
+    }
 
     @Test
     void verifyDefaultFallbackMethod() throws Throwable {
