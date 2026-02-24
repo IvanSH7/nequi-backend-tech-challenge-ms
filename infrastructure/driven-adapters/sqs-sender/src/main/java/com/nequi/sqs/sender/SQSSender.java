@@ -21,7 +21,6 @@ public class SQSSender implements ProcessorGateway {
     private final SqsAsyncClient client;
     private final String purchaseQueueUrl;
     private final String releaseQueueUrl;
-    private final String releaseDelay;
     private final ObjectMapper objectMapper;
 
     @Override

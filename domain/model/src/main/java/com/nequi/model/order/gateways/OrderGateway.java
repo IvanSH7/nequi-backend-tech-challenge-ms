@@ -7,6 +7,6 @@ public interface OrderGateway {
 
     Mono<Order> createOrder(Order order);
     Mono<Void> updateOrder(String id, String status);
-    Mono<Order> getOrder(String orderID);
+    Mono<Order> getOrder(String orderId);
 
 }

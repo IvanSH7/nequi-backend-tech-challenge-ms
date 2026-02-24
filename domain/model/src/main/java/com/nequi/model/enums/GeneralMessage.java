@@ -22,9 +22,9 @@ public enum GeneralMessage {
     PRECONDITION_FAILED("412", "NEQ412", "Precondition Failed"),
     UNPROCESSABLE_CONTENT("422", "NEQ422", "Unprocessable Content"),
 
-    UNAUTHORIZED(GeneralMessage.STATUS_CODE_401, "N401000", "Unauthorized"),
-    FORBIDDEN(GeneralMessage.STATUS_CODE_403, "N403000", "Forbidden"),
-    NOT_FOUND_1(GeneralMessage.STATUS_CODE_404, "N404001", NOT_FOUND.externalMessage),
+    INTERNAL_SERVER_ERROR("500", "N500000", "Internal Server Error"),
+    SERVICE_UNAVAILABLE_ERROR("503", "N503000", "Service Unavailable"),
+
 
     // ###### Internal Errors
 
@@ -40,20 +40,8 @@ public enum GeneralMessage {
     // ### ASYNC ERRORS
     EVENT_NOT_FOUND( "", "ENF000", "Event Not Found"),
     ORDER_NOT_FOUND( "", "ONF000", "Order Not Found"),
-    UNAVAILABLE_TICKETS( "", "OPE000", "Unavailable Tickets"),
+    UNAVAILABLE_TICKETS( "", "OPE000", "Unavailable Tickets");
 
-
-
-
-    INTERNAL_SERVER_ERROR(GeneralMessage.STATUS_CODE_500, "N500000", "Internal Server Error"),
-    SERVICE_UNAVAILABLE_ERROR(GeneralMessage.STATUS_CODE_503, "N503000", "Service Unavailable");
-
-
-    private static final String STATUS_CODE_401 = "401";
-    private static final String STATUS_CODE_403 = "403";
-    private static final String STATUS_CODE_404 = "404";
-    private static final String STATUS_CODE_500 = "500";
-    private static final String STATUS_CODE_503 = "503";
 
     private final String code;
     private final String externalCode;

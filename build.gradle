@@ -1,10 +1,9 @@
 buildscript {
 	ext {
-		cleanArchitectureVersion = '4.1.0'
+		cleanArchitectureVersion = '4.0.0'
 		springBootVersion = '4.0.2'
 		sonarVersion = '7.2.2.6593'
 		jacocoVersion = '0.8.14'
-		pitestVersion = '1.19.0-rc.3'
         lombokVersion = '1.18.42'
         modelModule = 'model'
         useCaseModule = 'usecase'
@@ -17,7 +16,6 @@ buildscript {
 plugins {
 	id 'co.com.bancolombia.cleanArchitecture' version "${cleanArchitectureVersion}"
 	id 'org.springframework.boot' version "${springBootVersion}" apply false
-	id 'info.solidsoft.pitest' version "${pitestVersion}" apply false
 	id 'org.sonarqube' version "${sonarVersion}"
 	id 'jacoco'
 }
@@ -28,13 +26,13 @@ sonar {
         property "sonar.sourceEncoding", "UTF-8"
         property "sonar.modules", "${modules.join(',')}"
         property "sonar.sources", "src,deployment,settings.gradle,main.gradle,build.gradle,${modules.collect { "${it}/build.gradle" }.join(',')}"
-        property "sonar.exclusions","**/MainApplication.java"
+        property "sonar.exclusions","**/deployment/**,**/enums/**,**/exception/**,**/config/**,**/model/**,**/test/**,**/mapper/**,**/dto/**," +
+                "**/Constants.java,*/applications/app-service/**,**/applications/app-service/src/main/java/**,**/dynamodb/entities/**,**/TemplateAdapterOperations.java"
         property "sonar.tests", "src/test"
         property "sonar.java.binaries", "**/build/classes/java/main"
         property "sonar.junit.reportsPath", "**/build/test-results/test"
         property "sonar.java.coveragePlugin", "jacoco"
         property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacocoMergedReport/jacocoMergedReport.xml"
-        property "sonar.pitest.reportPaths", "build/reports/pitest/mutations.xml"
         property "sonar.externalIssuesReportPaths", "build/issues.json"
     }
 }

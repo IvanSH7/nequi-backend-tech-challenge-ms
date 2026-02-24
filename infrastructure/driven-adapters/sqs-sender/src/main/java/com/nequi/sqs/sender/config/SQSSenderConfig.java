@@ -4,7 +4,6 @@ import com.nequi.model.order.gateways.ProcessorGateway;
 import com.nequi.sqs.sender.SQSSender;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -16,7 +15,6 @@ import tools.jackson.databind.ObjectMapper;
 import java.net.URI;
 
 @Configuration
-//@ConditionalOnMissingBean(SqsAsyncClient.class)
 public class SQSSenderConfig {
 
     @Value("${adapter.aws.region}")
@@ -59,9 +57,8 @@ public class SQSSenderConfig {
     public ProcessorGateway processorGateway(@Qualifier("senderClient") SqsAsyncClient sqsAsyncClient,
                                              @Value("${adapter.aws.sqs.purchase.queue-url}") String purchaseQueueUrl,
                                              @Value("${adapter.aws.sqs.release.queue-url}") String releaseQueueUrl,
-                                             @Value("${adapter.aws.sqs.release.delay}") String releaseDelay,
                                              ObjectMapper objectMapper) {
-        return new SQSSender(sqsAsyncClient, purchaseQueueUrl, releaseQueueUrl, releaseDelay, objectMapper);
+        return new SQSSender(sqsAsyncClient, purchaseQueueUrl, releaseQueueUrl, objectMapper);
     }
 
 }

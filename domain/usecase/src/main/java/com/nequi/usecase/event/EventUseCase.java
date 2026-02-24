@@ -1,6 +1,5 @@
 package com.nequi.usecase.event;
 
-
 import com.nequi.model.enums.GeneralMessage;
 import com.nequi.model.event.Event;
 import com.nequi.model.event.gateways.EventGateway;
@@ -13,6 +12,7 @@ import reactor.core.scheduler.Schedulers;
 import java.util.List;
 import java.util.UUID;
 
+import static com.nequi.model.enums.EventStates.PUBLISHED;
 
 @RequiredArgsConstructor
 public class EventUseCase {
@@ -24,7 +24,7 @@ public class EventUseCase {
         return Mono.just(UUID.randomUUID().toString())
                 .flatMap(eventId -> eventGateway.createEvent(event, eventId)
                         .doOnSuccess(unUsed -> ticketingGateway.createTickets(eventId, event.getCapacity())
-                                .then(Mono.defer(() -> eventGateway.updateEvent(eventId, "PUBLISHED")))
+                                .then(Mono.defer(() -> eventGateway.updateEvent(eventId, PUBLISHED.getName())))
                                 .onErrorResume(error -> Mono.empty())
                                 .subscribeOn(Schedulers.boundedElastic())
                                 .subscribe()

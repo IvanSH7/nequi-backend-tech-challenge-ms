@@ -6,13 +6,13 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum States {
+public enum OrderStates {
 
-    AVAILABLE("AVAILABLE"),
-    RESERVED("RESERVED"),
     PENDING_CONFIRMATION("PENDING_CONFIRMATION"),
-    SOLD("SOLD"),
-    COMPLIMENTARY("COMPLIMENTARY");
+    RESERVED("RESERVED"),
+    EXPIRED("EXPIRED"),
+    CONFIRMED("CONFIRMED"),
+    FAILED("FAILED");
 
     private final String name;
 

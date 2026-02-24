@@ -11,38 +11,29 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 import org.mapstruct.factory.Mappers;
 
+import static com.nequi.dynamodb.util.Constants.*;
+
 @Mapper(builder = @Builder(disableBuilder = true))
 public interface DynamoMapper {
-
-    String BASE_EVENT_PK = "EVENT#";
-    String BASE_ORDER_PK = "ORDER#";
-    String SK_METADATA = "METADATA";
-    String TYPE_EVENT = "Event";
 
     DynamoMapper MAPPER = Mappers.getMapper(DynamoMapper.class);
 
     @Mapping(target = "pk", source = "eventId", qualifiedByName = "buildEventPk")
-    @Mapping(target = "sk", constant = SK_METADATA)
-    @Mapping(target = "type", constant = "Event")
-    @Mapping(target = "status", constant = "CREATING")
+    @Mapping(target = "sk", constant = SORT_KEY_METADATA)
+    @Mapping(target = "type", constant = TYPE_EVENT)
+    @Mapping(target = "status", source = "status")
     @Mapping(target = "totalCapacity", source = "event.capacity")
     @Mapping(target = "availableCount", source = "event.capacity")
     @Mapping(target = "name", source = "event.name")
     @Mapping(target = "place", source = "event.place")
     @Mapping(target = "date", source = "event.date")
-    EventDto toEventDto(Event event, String eventId);
-
-    @Mapping(target = "pk", source = "eventId", qualifiedByName = "buildEventPk")
-    @Mapping(target = "sk", constant = SK_METADATA)
-    @Mapping(target = "status", constant = "PUBLISHED")
-    EventDto toUpdateEventDto(String eventId);
-
+    EventDto toEventDto(Event event, String eventId, String status);
 
     @Mapping(target = "pk", source = "eventId", qualifiedByName = "buildEventPk")
     @Mapping(target = "sk", source = "ticketId", qualifiedByName = "buildTicketSk")
-    @Mapping(target = "type", constant = "Ticket")
-    @Mapping(target = "status", constant = "AVAILABLE")
-    TicketDto toTicketDto(String eventId, Integer ticketId);
+    @Mapping(target = "type", constant = TYPE_TICKET)
+    @Mapping(target = "status", source = "status")
+    TicketDto toTicketDto(String eventId, Integer ticketId, String status);
 
     @Named("buildEventPk")
     default String buildEventPk(String eventId) {
@@ -51,7 +42,7 @@ public interface DynamoMapper {
 
     @Named("buildTicketSk")
     default String buildTicketSk(Integer ticketId) {
-        return String.format("TICKET#%06d", ticketId);
+        return String.format(BASE_TICKET_PK.concat("%06d"), ticketId);
     }
 
     @Mapping(target = "id", source = "eventDto.pk", qualifiedByName = "decodeId")
@@ -64,15 +55,15 @@ public interface DynamoMapper {
     Event toDomainEvent(EventDto eventDto);
 
     @Mapping(target = "pk", source = "orderId", qualifiedByName = "buildOrderPk")
-    @Mapping(target = "sk", constant = SK_METADATA)
-    @Mapping(target = "type", constant = "Order")
-    @Mapping(target = "status", constant = "PENDING_CONFIRMATION")
+    @Mapping(target = "sk", constant = SORT_KEY_METADATA)
+    @Mapping(target = "type", constant = TYPE_ORDER)
+    @Mapping(target = "status", source = "status")
     @Mapping(target = "eventId", source = "order.eventId", qualifiedByName = "buildEventPk")
     @Mapping(target = "quantity", source = "order.quantity")
-    OrderDto toOrderDto(Order order, String orderId);
+    OrderDto toOrderDto(Order order, String orderId, String status);
 
     @Mapping(target = "pk", source = "orderId", qualifiedByName = "buildOrderPk")
-    @Mapping(target = "sk", constant = SK_METADATA)
+    @Mapping(target = "sk", constant = SORT_KEY_METADATA)
     @Mapping(target = "status", source = "status")
     @Mapping(target = "expiresAt", source = "ttl")
     OrderDto toUpdateOrderDto(String orderId, String status, Long ttl);

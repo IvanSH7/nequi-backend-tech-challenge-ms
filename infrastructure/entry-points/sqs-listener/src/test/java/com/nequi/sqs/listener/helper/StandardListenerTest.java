@@ -22,7 +22,7 @@ import java.util.function.Function;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class FifoListenerTest {
+class StandardListenerTest {
 
     @Mock
     private SqsAsyncClient asyncClient;
@@ -37,8 +37,8 @@ class FifoListenerTest {
         MockitoAnnotations.openMocks(this);
 
         message = Message.builder().body("message").receiptHandle("receipt-handle").build();
-        var deleteMessageResponse = DeleteMessageResponse.builder().build();
         var messageResponse = ReceiveMessageResponse.builder().messages(message).build();
+        var deleteMessageResponse = DeleteMessageResponse.builder().build();
 
         when(asyncClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(messageResponse));
@@ -46,21 +46,20 @@ class FifoListenerTest {
                 .thenReturn(CompletableFuture.completedFuture(deleteMessageResponse));
     }
 
-    @Test
-    void listenerTest() {
-        var sqsListener = buildListener(processor);
-
-        Flux<Void> flow = ReflectionTestUtils.invokeMethod(sqsListener, "listen");
-        StepVerifier.create(flow).verifyComplete();
+    private StandardListener buildListener(Function<Message, Mono<Void>> proc) {
+        return StandardListener.builder()
+                .client(asyncClient)
+                .processor(proc)
+                .operation("operation")
+                .maxNumberOfMessages(1)
+                .build();
     }
 
     @Test
     void shouldProcessAndConfirmMessage() {
         when(processor.apply(any())).thenReturn(Mono.empty());
 
-        var sqsListener = buildListener(processor);
-
-        Flux<Void> flow = ReflectionTestUtils.invokeMethod(sqsListener, "listen");
+        Flux<Void> flow = ReflectionTestUtils.invokeMethod(buildListener(processor), "listen");
         StepVerifier.create(flow).verifyComplete();
 
         verify(processor).apply(message);
@@ -71,9 +70,7 @@ class FifoListenerTest {
     void shouldContinueOnProcessorError() {
         when(processor.apply(any())).thenReturn(Mono.error(new RuntimeException("processing failed")));
 
-        var sqsListener = buildListener(processor);
-
-        Flux<Void> flow = ReflectionTestUtils.invokeMethod(sqsListener, "listen");
+        Flux<Void> flow = ReflectionTestUtils.invokeMethod(buildListener(processor), "listen");
         StepVerifier.create(flow).verifyComplete();
     }
 
@@ -83,9 +80,7 @@ class FifoListenerTest {
         when(asyncClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(emptyResponse));
 
-        var sqsListener = buildListener(processor);
-
-        Flux<Void> flow = ReflectionTestUtils.invokeMethod(sqsListener, "listen");
+        Flux<Void> flow = ReflectionTestUtils.invokeMethod(buildListener(processor), "listen");
         StepVerifier.create(flow).verifyComplete();
 
         verifyNoInteractions(processor);
@@ -96,19 +91,8 @@ class FifoListenerTest {
         when(asyncClient.receiveMessage(any(ReceiveMessageRequest.class)))
                 .thenReturn(CompletableFuture.failedFuture(new RuntimeException("SQS unavailable")));
 
-        var sqsListener = buildListener(processor);
-
-        Flux<Void> flow = ReflectionTestUtils.invokeMethod(sqsListener, "listen");
+        Flux<Void> flow = ReflectionTestUtils.invokeMethod(buildListener(processor), "listen");
         StepVerifier.create(flow).verifyError(RuntimeException.class);
-    }
-
-    private FifoListener buildListener(Function<Message, Mono<Void>> proc) {
-        return FifoListener.builder()
-                .client(asyncClient)
-                .processor(proc)
-                .operation("operation")
-                .maxNumberOfMessages(1)
-                .build();
     }
 
 }
