@@ -13,13 +13,13 @@ Microservicio backend reactivo diseñado para gestionar el ciclo de vida de tick
 
 ## Arquitectura de Solución AWS
 
-<img src="./Architecture.jpeg" width="680" alt="Architecture"/>
+<img src="./Architecture.jpeg" width="1000" alt="Architecture"/>
 
 ## 🏗️ Decisiones de Diseño
 
 ### 1. Arquitectura Hexagonal y Domain-Driven Design (DDD)
 Se utilizó el estándar de *[Scaffold de Bancolombia](https://bancolombia.github.io/scaffold-clean-architecture/docs/intro)*
-con la finalidad de mantener las siguientes consideraciónes;
+con la finalidad de mantener las siguientes consideraciónes:
 * **Aislamiento del Dominio:** Garantizar que las reglas de negocio (entidades y casos de uso) no tengan dependencias
 con tecnologías externas.
 * **Inversión de Dependencias (DIP):** La interacción de la lógica de negocio (capa de dominio) con la base de datos y
@@ -48,7 +48,7 @@ de pago falla repetidamente por un error transitorio de infraestructura, el mens
 intervención manual o reprocesamiento, asegurando cero pérdida de datos.
 
 
-### 4. Event-Driven Expiration (SQS)
+### 4. Event-Driven Expiration (SQS Standard Queue)
 * **Gestión de TTL sin Cron Jobs:** Con el objetivo de evitar procesos *batch* consultando órdenes expiradas cada
 minuto, se implementó un flujo orientado a eventos para gestionar la expiración de órdenes y libración de tickets.
 * **Release Delay Queue:** Una vez efectuada la reserva de tickets, se publica un mensaje en una cola estándar SQS
@@ -107,7 +107,7 @@ En la raíz del proyecto, se debe ejecutar el wrapper de Gradle para construir e
 ./gradlew clean build 
 ```
 
-### 2. Despliegue infraestructura:
+### 3. Despliegue infraestructura:
 En la raíz del proyecto se levantará él `docker-compose.yml` el cual se encargara de construir la imagen a partir
 del `.jar`, empaquetando la app, un health check configurado en el compose asegurará que LocalStack haya creado la
 tabla DynamoDB y colas SQS antes de iniciar la applicación de Spring Boot.
@@ -131,36 +131,6 @@ docker logs -f nequi-backend-app
 Se puede explorar visualmente la tabla Dynamo, los eventos, tickets y órdenes abriendo en el navegador:
 http://localhost:8001
 
-## Endpoints expuestos
-Se puede importar la colección de postman que se encuentra sobre
-`postman/nequi-backend-tech-challenge.postman_collection.json` la cual comprende todos los endpoints expuestos por
-la aplicación, ya cuenta con ejemplos configurados.
-
-### Events (Eventos)
-`POST /api/v1/events` → Crear nuevo evento 
-```JSON
-{
-  "name": "Concierto",
-  "place": "Bogota",
-  "date": "10/07/2026",
-  "capacity": "100"
-}
-```
-`GET /api/v1/events/{eventId}` → Consultar detalle de un evento <br>
-`GET /api/v1/events` → Consultar todos los eventos existentes <br>
-`GET /api/v1/events/{eventId}/availability` → Consultar disponibilidad de un evento <br>
-
-### Orders (Ordenes)
-`POST /api/v1/orders` → Crear nueva orden de compra sobre un evento, especificando la cantidad de tickets a reservar
-```JSON
-{ 
-  "eventId": "c661bf67-18ce-4e3c-b4c6-82cd116e9e1b",
-  "quantity": 2
-}
-```
-`GET /api/v1/orders/{orderId}` → Consultar el estado de una orden de compra <br>
-`POST /api/v1/orders/{orderId}/pay` → Efectuar el pago de una orden de compra, confirmado la compra de los tickets previamente reservados <br>
-
 ## 🛑 Detener el entorno
 Para detener la aplicación y limpiar la red de contenedores:
 
@@ -182,3 +152,406 @@ Para ejecutar las pruebas y validar cobertura (JaCoCo):
 Una vez ejecutado, el reporte detallado en formato HTML estará disponible sobre la ruta: 
 `build/reports/jacocoMergedReport/html/index.html`.
 Se puede abrir en el navegador para revisar métricas.
+
+## Endpoints expuestos
+Se puede importar la colección de postman que se encuentra sobre
+`postman/nequi-backend-tech-challenge.postman_collection.json` la cual comprende todos los endpoints expuestos por
+la aplicación, ya cuenta con ejemplos configurados.
+
+### Events (Eventos)
+#### `POST /api/v1/events` → Crear nuevo evento <br>
+```mermaid
+sequenceDiagram
+    actor Client
+    participant RouterRest
+    participant Handler
+    participant HandlerValidator
+    participant EventUseCase
+    participant EventAdapter (DynamoDB)
+    participant TicketAdapter (DynamoDB)
+
+    Client->>RouterRest: POST /api/v1/events {name, place, date, capacity}
+    RouterRest->>Handler: createEvent(serverRequest)
+    Note over Handler: @CircuitBreaker(CREATE_EVENT)
+
+    Handler->>Handler: bodyToMono(CreateEventRequest)
+    Handler->>HandlerValidator: validateCreateEvent(request, requestId)
+    Note over HandlerValidator: Validates: requestId (UUID),<br/>name, date, place, capacity
+
+    alt Validation errors
+        HandlerValidator-->>Handler: Errors
+        Handler-->>Client: 400 Bad Request
+    else Valid request
+        HandlerValidator-->>Handler: Empty Errors
+
+        Handler->>EventUseCase: create(event)
+        EventUseCase->>EventUseCase: generate UUID (eventId)
+        EventUseCase->>EventAdapter (DynamoDB): createEvent(event, eventId)
+        Note over EventAdapter (DynamoDB): Saves event with status = CREATING
+        EventAdapter (DynamoDB)-->>EventUseCase: Void
+
+        EventUseCase-->>Handler: eventId
+        Handler-->>Client: 201 Created {eventId}
+
+        Note over EventUseCase: Async fire-and-forget<br/>(subscribeOn boundedElastic)
+        EventUseCase->>TicketAdapter (DynamoDB): createTickets(eventId, capacity)
+        Note over TicketAdapter (DynamoDB): Concurrent batch saves<br/>(Flux.range, flatMap concurrency=25)
+
+        alt Tickets created successfully
+            TicketAdapter (DynamoDB)-->>EventUseCase: Void
+            EventUseCase->>EventAdapter (DynamoDB): updateEvent(eventId, PUBLISHED)
+        else Ticket creation fails
+            TicketAdapter (DynamoDB)-->>EventUseCase: Error
+            EventUseCase->>EventAdapter (DynamoDB): updateEvent(eventId, FAILED)
+        end
+    end
+
+```
+#### `GET /api/v1/events/{eventId}` → Consultar detalle de un evento <br>
+```mermaid
+sequenceDiagram
+    actor Client
+    participant RouterRest
+    participant Handler
+    participant HandlerValidator
+    participant EventUseCase
+    participant EventAdapter (DynamoDB)
+
+    Client->>RouterRest: GET /api/v1/events/{eventId}
+    RouterRest->>Handler: queryEvent(serverRequest)
+    Note over Handler: @CircuitBreaker(QUERY_EVENT)
+
+    Handler->>HandlerValidator: validateQuery(eventId, requestId)
+    Note over HandlerValidator: Validates: requestId (UUID),<br/>eventId (UUID)
+
+    alt Validation errors
+        HandlerValidator-->>Handler: Errors
+        Handler-->>Client: 400 Bad Request
+    else Valid request
+        HandlerValidator-->>Handler: Empty Errors
+
+        Handler->>EventUseCase: queryEvent(eventId)
+        EventUseCase->>EventAdapter (DynamoDB): getEvent(eventId)
+        Note over EventAdapter (DynamoDB): GetItem by pk=EVENT#{eventId}<br/>sk=METADATA
+
+        alt Event not found
+            EventAdapter (DynamoDB)-->>EventUseCase: Empty Mono
+            EventUseCase-->>Handler: BusinessException(NOT_FOUND)
+            Handler-->>Client: 404 Not Found
+        else Event found
+            EventAdapter (DynamoDB)-->>EventUseCase: EventDto → Event
+            EventUseCase-->>Handler: Event
+            Handler-->>Client: 200 OK {event details}
+        end
+    end
+
+```
+#### `GET /api/v1/events` → Consultar todos los eventos existentes <br>
+```mermaid
+sequenceDiagram
+    actor Client
+    participant RouterRest
+    participant Handler
+    participant HandlerValidator
+    participant EventUseCase
+    participant EventAdapter (DynamoDB)
+
+    Client->>RouterRest: GET /api/v1/events
+    RouterRest->>Handler: queryEvents(serverRequest)
+    Note over Handler: @CircuitBreaker(QUERY_EVENTS)
+
+    Handler->>HandlerValidator: validateQueryEvents(requestId)
+    Note over HandlerValidator: Validates: requestId (UUID)
+
+    alt Validation errors
+        HandlerValidator-->>Handler: Errors
+        Handler-->>Client: 400 Bad Request
+    else Valid request
+        HandlerValidator-->>Handler: Empty Errors
+
+        Handler->>EventUseCase: queryEvents()
+        EventUseCase->>EventAdapter (DynamoDB): queryEvents()
+        Note over EventAdapter (DynamoDB): Query by GSI EntityTypeIndex<br/>pk = "EVENT"
+
+        EventAdapter (DynamoDB)-->>EventUseCase: List[EventDto] → List[Event]
+        EventUseCase-->>Handler: List[Event]
+        Handler-->>Client: 200 OK [events]
+    end
+
+```
+#### `GET /api/v1/events/{eventId}/availability` → Consultar disponibilidad de un evento <br>
+```mermaid
+sequenceDiagram
+    actor Client
+    participant RouterRest
+    participant Handler
+    participant HandlerValidator
+    participant EventUseCase
+    participant EventAdapter (DynamoDB)
+
+    Client->>RouterRest: GET /api/v1/events/{eventId}/availability
+    RouterRest->>Handler: queryAvailability(serverRequest)
+    Note over Handler: @CircuitBreaker(QUERY_AVAILABILITY)
+
+    Handler->>HandlerValidator: validateQuery(eventId, requestId)
+    Note over HandlerValidator: Validates: requestId (UUID),<br/>eventId (UUID)
+
+    alt Validation errors
+        HandlerValidator-->>Handler: Errors
+        Handler-->>Client: 400 Bad Request
+    else Valid request
+        HandlerValidator-->>Handler: Empty Errors
+
+        Handler->>EventUseCase: queryEvent(eventId)
+        EventUseCase->>EventAdapter (DynamoDB): getEvent(eventId)
+        Note over EventAdapter (DynamoDB): GetItem by pk=EVENT#{eventId}<br/>sk=METADATA
+
+        alt Event not found
+            EventAdapter (DynamoDB)-->>EventUseCase: Empty Mono
+            EventUseCase-->>Handler: BusinessException(NOT_FOUND)
+            Handler-->>Client: 404 Not Found
+        else Event found
+            EventAdapter (DynamoDB)-->>EventUseCase: EventDto → Event
+            EventUseCase-->>Handler: Event
+            Note over Handler: Maps only event.getAvailability()
+            Handler-->>Client: 200 OK {availability}
+        end
+    end
+
+```
+
+### Orders (Ordenes)
+#### `POST /api/v1/orders` → Crear nueva orden de compra sobre un evento, especificando la cantidad de tickets a reservar <br>
+```mermaid
+sequenceDiagram
+    actor Client
+    participant RouterRest
+    participant Handler
+    participant HandlerValidator
+    participant OrderUseCase
+    participant EventUseCase
+    participant EventAdapter (DynamoDB)
+    participant OrderAdapter (DynamoDB)
+    participant SQSSender (FIFO Queue)
+
+    Client->>RouterRest: POST /api/v1/orders {eventId, quantity}
+    RouterRest->>Handler: createOrder(serverRequest)
+    Note over Handler: @CircuitBreaker(CREATE_ORDER)
+
+    Handler->>HandlerValidator: validateCreateOrder(request, requestId)
+    Note over HandlerValidator: Validates: requestId (UUID),<br/>eventId (UUID), quantity
+
+    alt Validation errors
+        HandlerValidator-->>Handler: Errors
+        Handler-->>Client: 400 Bad Request
+    else Valid request
+        HandlerValidator-->>Handler: Empty Errors
+
+        Handler->>OrderUseCase: create(order)
+        OrderUseCase->>EventUseCase: queryEvent(eventId)
+        EventUseCase->>EventAdapter (DynamoDB): getEvent(eventId)
+
+        alt Event not found
+            EventAdapter (DynamoDB)-->>OrderUseCase: Empty Mono
+            OrderUseCase-->>Handler: BusinessException(UNPROCESSABLE_CONTENT)
+            Handler-->>Client: 422 Unprocessable Content
+        else Event status != PUBLISHED
+            EventAdapter (DynamoDB)-->>OrderUseCase: Event
+            OrderUseCase-->>Handler: BusinessException(CONFLICT)
+            Handler-->>Client: 409 Conflict
+        else Event found and PUBLISHED
+            EventAdapter (DynamoDB)-->>OrderUseCase: Event
+
+            OrderUseCase->>OrderAdapter (DynamoDB): createOrder(order)
+            Note over OrderAdapter (DynamoDB): Saves order with<br/>status = PENDING_CONFIRMATION
+            OrderAdapter (DynamoDB)-->>OrderUseCase: Order (with generated orderId)
+
+            OrderUseCase->>SQSSender (FIFO Queue): processOrder(order)
+            Note over SQSSender (FIFO Queue): Sends to FIFO purchase queue<br/>messageGroupId = eventId<br/>messageDeduplicationId = orderId
+            SQSSender (FIFO Queue)-->>OrderUseCase: Void
+
+            OrderUseCase-->>Handler: orderId
+            Handler-->>Client: 201 Created {orderId}
+        end
+    end
+
+```
+#### `GET /api/v1/orders/{orderId}` → Consultar el estado de una orden de compra <br>
+```mermaid
+sequenceDiagram
+    actor Client
+    participant RouterRest
+    participant Handler
+    participant HandlerValidator
+    participant OrderUseCase
+    participant OrderAdapter (DynamoDB)
+
+    Client->>RouterRest: GET /api/v1/orders/{orderId}
+    RouterRest->>Handler: queryOrder(serverRequest)
+    Note over Handler: @CircuitBreaker(QUERY_ORDER)
+
+    Handler->>HandlerValidator: validateQuery(orderId, requestId)
+    Note over HandlerValidator: Validates: requestId (UUID),<br/>orderId (UUID)
+
+    alt Validation errors
+        HandlerValidator-->>Handler: Errors
+        Handler-->>Client: 400 Bad Request
+    else Valid request
+        HandlerValidator-->>Handler: Empty Errors
+
+        Handler->>OrderUseCase: queryOrder(orderId)
+        OrderUseCase->>OrderAdapter (DynamoDB): getOrder(orderId)
+        Note over OrderAdapter (DynamoDB): GetItem by pk=ORDER#{orderId}<br/>sk=METADATA
+
+        alt Order not found
+            OrderAdapter (DynamoDB)-->>OrderUseCase: Empty Mono
+            OrderUseCase-->>Handler: BusinessException(NOT_FOUND)
+            Handler-->>Client: 404 Not Found
+        else Order found
+            OrderAdapter (DynamoDB)-->>OrderUseCase: OrderDto → Order
+            OrderUseCase-->>Handler: Order
+            Handler-->>Client: 200 OK {order details}
+        end
+    end
+
+```
+#### `POST /api/v1/orders/{orderId}/pay` → Efectuar el pago de una orden de compra, confirmado la compra de los tickets previamente reservados <br>
+```mermaid
+sequenceDiagram
+    actor Client
+    participant RouterRest
+    participant Handler
+    participant HandlerValidator
+    participant OrderUseCase
+    participant OrderAdapter (DynamoDB)
+    participant TicketAdapter (DynamoDB)
+
+    Client->>RouterRest: POST /api/v1/orders/{orderId}/pay
+    RouterRest->>Handler: payOrder(serverRequest)
+    Note over Handler: @CircuitBreaker(PAY_ORDER)
+
+    Handler->>HandlerValidator: validateQuery(orderId, requestId)
+    Note over HandlerValidator: Validates: requestId (UUID),<br/>orderId (UUID)
+
+    alt Validation errors
+        HandlerValidator-->>Handler: Errors
+        Handler-->>Client: 400 Bad Request
+    else Valid request
+        HandlerValidator-->>Handler: Empty Errors
+
+        Handler->>OrderUseCase: payOrder(orderId)
+        OrderUseCase->>OrderAdapter (DynamoDB): getOrder(orderId)
+        Note over OrderAdapter (DynamoDB): GetItem by pk=ORDER#{orderId}<br/>sk=METADATA
+
+        alt Order not found
+            OrderAdapter (DynamoDB)-->>OrderUseCase: Empty Mono
+            OrderUseCase-->>Handler: BusinessException(NOT_FOUND)
+            Handler-->>Client: 404 Not Found
+        else Order status != RESERVED
+            OrderAdapter (DynamoDB)-->>OrderUseCase: Order
+            OrderUseCase-->>Handler: BusinessException(PRECONDITION_FAILED)
+            Handler-->>Client: 412 Precondition Failed
+        else Order found and RESERVED
+            OrderAdapter (DynamoDB)-->>OrderUseCase: Order
+
+            OrderUseCase->>TicketAdapter (DynamoDB): confirmTickets(eventId, orderId)
+            Note over TicketAdapter (DynamoDB): Query tickets by orderId,<br/>then TransactWriteItems:<br/>- Order → CONFIRMED<br/>- Tickets → SOLD<br/>(ConditionExpression: status = RESERVED)
+
+            alt Transaction fails (concurrent modification)
+                TicketAdapter (DynamoDB)-->>OrderUseCase: TechnicalException
+                OrderUseCase-->>Handler: TechnicalException
+                Handler-->>Client: 500 / 503
+            else Transaction succeeds
+                TicketAdapter (DynamoDB)-->>OrderUseCase: Void
+                OrderUseCase-->>Handler: Void
+                Handler-->>Client: 202 Accepted
+            end
+        end
+    end
+
+```
+
+### SQS Listener
+#### Process Order FIFO - Queue → Gestiona la validacion de disponibilidad, reserva de ticketes y envia mensaje con delay a cola de liberacion de ticketes.
+```mermaid
+sequenceDiagram
+    participant SQS FIFO Queue
+    participant FifoListener
+    participant SqsFifoProcessor
+    participant OrderUseCase
+    participant TicketAdapter (DynamoDB)
+    participant OrderAdapter (DynamoDB)
+    participant SQSSender (Standard Queue)
+
+    loop Parallel polling (boundedElastic threads)
+        FifoListener->>SQS FIFO Queue: receiveMessage(maxMessages, waitTime)
+        SQS FIFO Queue-->>FifoListener: Message {order JSON}
+
+        FifoListener->>SqsFifoProcessor: apply(message)
+        SqsFifoProcessor->>SqsFifoProcessor: deserialize → ProcessOrderMessage
+
+        SqsFifoProcessor->>OrderUseCase: process(order)
+        OrderUseCase->>TicketAdapter (DynamoDB): reserveTickets(eventId, orderId, quantity, ttl)
+        Note over TicketAdapter (DynamoDB): Query AVAILABLE tickets,<br/>TransactWriteItems:<br/>- Event availableCount -= qty<br/>- Order → RESERVED<br/>- Tickets → RESERVED<br/>(ConditionExpression on each)
+
+        alt Tickets reserved successfully
+            TicketAdapter (DynamoDB)-->>OrderUseCase: Void
+            OrderUseCase->>SQSSender (Standard Queue): scheduleOrderRelease(orderId, ttl)
+            Note over SQSSender (Standard Queue): Publishes to release queue<br/>with delaySeconds = ttl
+            SQSSender (Standard Queue)-->>OrderUseCase: Void
+            OrderUseCase-->>SqsFifoProcessor: orderId
+            SqsFifoProcessor->>FifoListener: Void (success)
+            FifoListener->>SQS FIFO Queue: deleteMessage(receiptHandle)
+        else Not enough tickets (BusinessException)
+            TicketAdapter (DynamoDB)-->>OrderUseCase: BusinessException(UNAVAILABLE_TICKETS)
+            OrderUseCase->>OrderAdapter (DynamoDB): updateOrder(orderId, FAILED)
+            OrderAdapter (DynamoDB)-->>OrderUseCase: Void
+            OrderUseCase-->>SqsFifoProcessor: Void
+            SqsFifoProcessor->>FifoListener: Void
+            FifoListener->>SQS FIFO Queue: deleteMessage(receiptHandle)
+        else Technical error
+            TicketAdapter (DynamoDB)-->>OrderUseCase: TechnicalException
+            OrderUseCase-->>SqsFifoProcessor: Error
+            Note over FifoListener: onErrorContinue — message<br/>stays in queue → DLQ after retries
+        end
+    end
+
+```
+
+#### Release Order (Expiration) - Standard Queue → Gestiona la liberación de ticketes reservados los cuales no se hayan confirmado con el pago de la orden
+```mermaid
+sequenceDiagram
+    participant SQS Standard Queue
+    participant StandardListener
+    participant SqsStandardProcessor
+    participant OrderUseCase
+    participant OrderAdapter (DynamoDB)
+    participant TicketAdapter (DynamoDB)
+
+    Note over SQS Standard Queue: Message becomes visible<br/>after delay (ttl expires)
+
+    loop Parallel polling (boundedElastic threads)
+        StandardListener->>SQS Standard Queue: receiveMessage(maxMessages, waitTime)
+        SQS Standard Queue-->>StandardListener: Message {orderId}
+
+        StandardListener->>SqsStandardProcessor: apply(message)
+        SqsStandardProcessor->>OrderUseCase: release(orderId)
+
+        OrderUseCase->>OrderAdapter (DynamoDB): getOrder(orderId)
+        OrderAdapter (DynamoDB)-->>OrderUseCase: Order
+
+        alt Order status != RESERVED (already paid/expired)
+            OrderUseCase-->>SqsStandardProcessor: Empty Mono (no-op)
+            SqsStandardProcessor->>StandardListener: Void
+            StandardListener->>SQS Standard Queue: deleteMessage(receiptHandle)
+        else Order still RESERVED (not paid in time)
+            OrderUseCase->>TicketAdapter (DynamoDB): releaseTickets(eventId, orderId)
+            Note over TicketAdapter (DynamoDB): TransactWriteItems:<br/>- Event availableCount += qty<br/>- Order → EXPIRED<br/>- Tickets → AVAILABLE
+            TicketAdapter (DynamoDB)-->>OrderUseCase: Void
+            OrderUseCase-->>SqsStandardProcessor: Void
+            SqsStandardProcessor->>StandardListener: Void
+            StandardListener->>SQS Standard Queue: deleteMessage(receiptHandle)
+        end
+    end
+
+```
