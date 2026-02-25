@@ -1,0 +1,293 @@
+{
+  "info": {
+    "_postman_id": "15bc009c-9428-471d-8249-29ec45e4c8d7",
+    "name": "nequi-backend-tech-challenge",
+    "description": "Sistema Transaccional de Ticketing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "24207351",
+    "_collection_link": "https://go.postman.co/collection/24207351-15bc009c-9428-471d-8249-29ec45e4c8d7?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Create Event",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let reponse = pm.response.json();",
+              "",
+              "let eventId = reponse.data.id;",
+              "pm.collectionVariables.set(\"eventId\", eventId);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-request-id",
+            "value": "{{$randomUUID}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \n    \"name\": \"Concierto\",\n    \"place\": \"Bogota\",\n    \"date\": \"10/07/2026\",\n    \"capacity\": \"100\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:9090/api/v1/events",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "v1",
+            "events"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Query Event Detail",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-request-id",
+            "value": "{{$randomUUID}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:9090/api/v1/events/{{eventId}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "v1",
+            "events",
+            "{{eventId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Query Events",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-request-id",
+            "value": "{{$randomUUID}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:9090/api/v1/events",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "v1",
+            "events"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Query Event Availability",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-request-id",
+            "value": "{{$randomUUID}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:9090/api/v1/events/{{eventId}}/availability",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "v1",
+            "events",
+            "{{eventId}}",
+            "availability"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Order",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let reponse = pm.response.json();",
+              "",
+              "let orderId = reponse.data.id;",
+              "pm.collectionVariables.set(\"orderId\", orderId);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-request-id",
+            "value": "{{$randomUUID}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \n    \"eventId\": \"{{eventId}}\",\n    \"quantity\": 2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:9090/api/v1/orders",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "v1",
+            "orders"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Query Order",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-request-id",
+            "value": "{{$randomUUID}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:9090/api/v1/orders/{{orderId}}",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "v1",
+            "orders",
+            "{{orderId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Pay Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "x-request-id",
+            "value": "{{$randomUUID}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:9090/api/v1/orders/{{orderId}}/pay",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "api",
+            "v1",
+            "orders",
+            "{{orderId}}",
+            "pay"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "x-request-id",
+            "value": "{{$randomUUID}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:9090/actuator/health",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "9090",
+          "path": [
+            "actuator",
+            "health"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "eventId",
+      "value": ""
+    },
+    {
+      "key": "orderId",
+      "value": ""
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+buildscript {
+	ext {
+		cleanArchitectureVersion = '4.0.0'
+		springBootVersion = '4.0.2'
+		sonarVersion = '7.2.2.6593'
+		jacocoVersion = '0.8.14'
+        lombokVersion = '1.18.42'
+        modelModule = 'model'
+        useCaseModule = 'usecase'
+        logstashLogbackVersion = '9.0'
+        resilience4jVersion= '2.3.0'
+        mapstructVersion = '1.6.3'
+	}
+}
+
+plugins {
+	id 'co.com.bancolombia.cleanArchitecture' version "${cleanArchitectureVersion}"
+	id 'org.springframework.boot' version "${springBootVersion}" apply false
+	id 'org.sonarqube' version "${sonarVersion}"
+	id 'jacoco'
+}
+
+sonar {
+    def modules = subprojects.projectDir.collect { "${it.toString().replace(project.projectDir.toString() + "/", "")}" }
+    properties {
+        property "sonar.sourceEncoding", "UTF-8"
+        property "sonar.modules", "${modules.join(',')}"
+        property "sonar.sources", "src,deployment,settings.gradle,main.gradle,build.gradle,${modules.collect { "${it}/build.gradle" }.join(',')}"
+        property "sonar.exclusions","**/deployment/**,**/enums/**,**/exception/**,**/config/**,**/model/**,**/test/**,**/mapper/**,**/dto/**," +
+                "**/Constants.java,*/applications/app-service/**,**/applications/app-service/src/main/java/**,**/dynamodb/entities/**,**/TemplateAdapterOperations.java"
+        property "sonar.tests", "src/test"
+        property "sonar.java.binaries", "**/build/classes/java/main"
+        property "sonar.junit.reportsPath", "**/build/test-results/test"
+        property "sonar.java.coveragePlugin", "jacoco"
+        property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacocoMergedReport/jacocoMergedReport.xml"
+        property "sonar.externalIssuesReportPaths", "build/issues.json"
+    }
+}
+
+apply from: './main.gradle'
