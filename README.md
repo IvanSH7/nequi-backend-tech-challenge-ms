@@ -1,7 +1,7 @@
 # Nequi Tech Challenge - Ticketing System API
 
-Microservicio backend reactivo diseñado para gestionar la disponibilidad, procesamiento de compras y liberación de
-tickets para eventos. Planteando solución al desafío técnico.
+Microservicio backend reactivo diseñado para gestionar el ciclo de vida de tickets para eventos
+(creación, reserva, compra y liberación). Planteando solución al desafío técnico.
 
 ## 🛠️ Stack Tecnológico
 * **Lenguaje:** Java 25
@@ -11,7 +11,7 @@ tickets para eventos. Planteando solución al desafío técnico.
 * **Testing:** Junit, Mockito, reactor-test
 * **Herramientas:** Gradle, MapStruct, Lombok, LocalStack, Docker Compose
 
-## Arquitectura de Solución
+## Arquitectura de Solución AWS
 
 <img src="./Architecture.jpeg" width="680" alt="Architecture"/>
 
@@ -128,7 +128,38 @@ docker logs -f nequi-backend-app
 
 ### DynamoDB Admin UI:
 
-Se puede explorar visualmente la tabla Dynamo, los eventos, tickets y órdenes abriendo en el navegador: http://localhost:8001
+Se puede explorar visualmente la tabla Dynamo, los eventos, tickets y órdenes abriendo en el navegador:
+http://localhost:8001
+
+## Endpoints expuestos
+Se puede importar la colección de postman que se encuentra sobre
+`postman/nequi-backend-tech-challenge.postman_collection.json` la cual comprende todos los endpoints expuestos por
+la aplicación, ya cuenta con ejemplos configurados.
+
+### Events (Eventos)
+`POST /api/v1/events` → Crear nuevo evento 
+```JSON
+{
+  "name": "Concierto",
+  "place": "Bogota",
+  "date": "10/07/2026",
+  "capacity": "100"
+}
+```
+`GET /api/v1/events/{eventId}` → Consultar detalle de un evento <br>
+`GET /api/v1/events` → Consultar todos los eventos existentes <br>
+`GET /api/v1/events/{eventId}/availability` → Consultar disponibilidad de un evento <br>
+
+### Orders (Ordenes)
+`POST /api/v1/orders` → Crear nueva orden de compra sobre un evento, especificando la cantidad de tickets a reservar
+```JSON
+{ 
+  "eventId": "c661bf67-18ce-4e3c-b4c6-82cd116e9e1b",
+  "quantity": 2
+}
+```
+`GET /api/v1/orders/{orderId}` → Consultar el estado de una orden de compra <br>
+`POST /api/v1/orders/{orderId}/pay` → Efectuar el pago de una orden de compra, confirmado la compra de los tickets previamente reservados <br>
 
 ## 🛑 Detener el entorno
 Para detener la aplicación y limpiar la red de contenedores:
@@ -136,3 +167,18 @@ Para detener la aplicación y limpiar la red de contenedores:
 ```bash
 docker-compose down
 ```
+
+---
+## 🧪 Pruebas Unitarias y Cobertura
+
+El proyecto cuenta con una suite de pruebas enfocada en el comportamiento del dominio y la integración de los
+adaptadores, asegurando la calidad del código y la prevención de regresiones.
+
+Para ejecutar las pruebas y validar cobertura (JaCoCo):
+```bash
+./gradlew test jacocoTestReport
+```
+
+Una vez ejecutado, el reporte detallado en formato HTML estará disponible sobre la ruta: 
+`build/reports/jacocoMergedReport/html/index.html`.
+Se puede abrir en el navegador para revisar métricas.
