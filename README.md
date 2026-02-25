@@ -1,47 +1,138 @@
-# Proyecto Base Implementando Clean Architecture
+# Nequi Tech Challenge - Ticketing System API
 
-## Antes de Iniciar
+Microservicio backend reactivo diseñado para gestionar la disponibilidad, procesamiento de compras y liberación de
+tickets para eventos. Planteando solución al desafío técnico.
 
-Empezaremos por explicar los diferentes componentes del proyectos y partiremos de los componentes externos, continuando con los componentes core de negocio (dominio) y por último el inicio y configuración de la aplicación.
+## 🛠️ Stack Tecnológico
+* **Lenguaje:** Java 25
+* **Framework:** Spring Boot 4.x (WebFlux / Project Reactor)
+* **Cloud & Infraestructura:** AWS SDK v2 (Async), DynamoDB, SQS
+* **Resiliencia:** Resilience4j (Circuit Breaker)
+* **Testing:** Junit, Mockito, reactor-test
+* **Herramientas:** Gradle, MapStruct, Lombok, LocalStack, Docker Compose
 
-Lee el artículo [Clean Architecture — Aislando los detalles](https://medium.com/bancolombia-tech/clean-architecture-aislando-los-detalles-4f9530f35d7a)
+## Arquitectura de Solución
 
-# Arquitectura
+<img src="./Architecture.jpeg" width="680" alt="Architecture"/>
+
+## 🏗️ Decisiones de Diseño
+
+### 1. Arquitectura Hexagonal y Domain-Driven Design (DDD)
+Se utilizó el estándar de *[Scaffold de Bancolombia](https://bancolombia.github.io/scaffold-clean-architecture/docs/intro)*
+con la finalidad de mantener las siguientes consideraciónes;
+* **Aislamiento del Dominio:** Garantizar que las reglas de negocio (entidades y casos de uso) no tengan dependencias
+con tecnologías externas.
+* **Inversión de Dependencias (DIP):** La interacción de la lógica de negocio (capa de dominio) con la base de datos y
+la mensajería se efectúa por medio de interfaces. La implementación real (DynamoDB, SQS) ocurre en los `Driven Adapters`,
+facilitando el testing aislado mediante Mocks y permitiendo el desligamiento tecnológico sin afectar el core de negocio.
+
+[Clean Architecture — Aislando los detalles](https://medium.com/bancolombia-tech/clean-architecture-aislando-los-detalles-4f9530f35d7a)
 
 ![Clean Architecture](https://miro.medium.com/max/1400/1*ZdlHz8B0-qu9Y-QO3AXR_w.png)
 
-## Domain
+### 2. Base de Datos: Single-Table Design y Control de Concurrencia (DynamoDB)
+* **Modelado NoSQL:** Se implementó el patrón **Single-Table Design** de DynamoDB con el fin de optimizar rendimiento.
+Entidades dispares como `Event`, `Order` y `Ticket` conviven en una unica tabla `ticketing-table-dev` diferenciadas por
+llaves compuestas (`pk`, `sk`) y un Global Secondary Index (`EntityTypeIndex`) para satisfacer todos los patrones de
+acceso en consultas, reduciendo complejidad y saltos de red.
+* **Optimistic Locking y Transacciones ACID:** Con la finalidad de evitar la sobreventa en entornos altamente
+transaccionales, se implementaron transacciones atómicas [(`TransactWriteItems`)](https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/transaction-apis.html#transaction-apis-txwriteitems) respaldadas por expresiones de
+condición (`ConditionExpression`). Al actualizar una orden o ticket, DynamoDB válida el estado previo a nivel de motor
+de base de datos, rechazando peticiones concurrentes que intenten modificar el mismo ticket.
 
-Es el módulo más interno de la arquitectura, pertenece a la capa del dominio y encapsula la lógica y reglas del negocio mediante modelos y entidades del dominio.
+### 3. Procesamiento de Nuevas Órdenes (SQS FiFo Queue):
+* **FiFo Queue:** Desacopla la validación compleja de disponibilidad de tickets de la generación de nuevas órdenes,
+reserva los tickets requeridos y actualiza el estado de la orden.
+* **Dead Letter Queue (DLQ):** La cola FIFO principal cuenta con un *Redrive Policy*. Si el procesamiento de una orden
+de pago falla repetidamente por un error transitorio de infraestructura, el mensaje es degradado a la DLQ para 
+intervención manual o reprocesamiento, asegurando cero pérdida de datos.
 
-## Usecases
 
-Este módulo gradle perteneciente a la capa del dominio, implementa los casos de uso del sistema, define lógica de aplicación y reacciona a las invocaciones desde el módulo de entry points, orquestando los flujos hacia el módulo de entities.
+### 4. Event-Driven Expiration (SQS)
+* **Gestión de TTL sin Cron Jobs:** Con el objetivo de evitar procesos *batch* consultando órdenes expiradas cada
+minuto, se implementó un flujo orientado a eventos para gestionar la expiración de órdenes y libración de tickets.
+* **Release Delay Queue:** Una vez efectuada la reserva de tickets, se publica un mensaje en una cola estándar SQS
+con un *Delay* equivalente al tiempo de gracia para el pago (ej. 10 minutos). Cuando el mensaje se vuelve visible
+y es consumido por el listener de la aplicación, iniciando un proceso de validación de estado de la orden;
+si no está pagada o en estado confirmada (`CONFIRMED`), ejecuta una transacción ACID compensatoria para liberar
+los tickets transitándolos del estado (`RESERVED`) a (`AVAILABLE`) y expirar la orden correspondiente (`EXPIRED`).
 
-## Infrastructure
+### 5. Tolerancia a Fallos
+* **Circuit Breaker Inteligente:** Implementado con *Resilience4j*, con la finalidad de proteger el servicio ante fallos
+reiterativos por indisponibilidad de ambiente, permitiendo una estabilización del mismo. Se ignoran excepciones
+de negocio mediante la propiedad (`ignoreExceptions`) para que no sumen a la tasa de fallos, evitando la apertura
+accidental del circuito ante errores del cliente.
 
-### Helpers
 
-En el apartado de helpers tendremos utilidades generales para los Driven Adapters y Entry Points.
+---
 
-Estas utilidades no están arraigadas a objetos concretos, se realiza el uso de generics para modelar comportamientos
-genéricos de los diferentes objetos de persistencia que puedan existir, este tipo de implementaciones se realizan
-basadas en el patrón de diseño [Unit of Work y Repository](https://medium.com/@krzychukosobudzki/repository-design-pattern-bc490b256006)
+## ⚖️ Trade-Offs (Compromisos Arquitectónicos)
 
-Estas clases no puede existir solas y debe heredarse su compartimiento en los **Driven Adapters**
+### 1. Latencia vs. Consistencia Fuerte en la Creación de Eventos:
+* **Decisión:** Al crear un evento, la generación masiva de tickets (ej. 10,000 tickets) se ejecuta en un flujo
+reactivo asíncrono para no bloquear la respuesta HTTP al cliente.
+* **Trade-off:** Si se presenta un fallo en la generación de tickets después de responder `201 Created`, la creación
+el evento no se encontrara publicado (`PUBLISHED`) para la compra de Tickets, y se actualizara el estado
+del mismo a fallido (`FAILED`)
+* **Evolución futura:** Encolar un comando (`CreateTicketsCommand`) en SQS para garantizar la consistencia eventual 
+y la resiliencia ante caídas del pod.
 
-### Driven Adapters
+### 2. Manejo de Errores con DLQ (Dead Letter Queues):
+* **Decisión:** Integración de una política de reintentos (*Redrive Policy*) en SQS.
+* **Trade-off:** Añade complejidad operativa. Si un mensaje falla 3 veces por errores transitorios, se aísla en la DLQ,
+requiriendo mecanismos de reprocesamiento manual o alertas operativas.
 
-Los driven adapter representan implementaciones externas a nuestro sistema, como lo son conexiones a servicios rest,
-soap, bases de datos, lectura de archivos planos, y en concreto cualquier origen y fuente de datos con la que debamos
-interactuar.
+## ⚙️ Requisitos Previos
 
-### Entry Points
+Para ejecutar este proyecto de manera local, es necesario contar con:
+* **Java 25** (JDK)
+* **Docker y Docker Compose**
 
-Los entry points representan los puntos de entrada de la aplicación o el inicio de los flujos de negocio.
 
-## Application
+## 🚀 Ejecución del Proyecto
 
-Este módulo es el más externo de la arquitectura, es el encargado de ensamblar los distintos módulos, resolver las dependencias y crear los beans de los casos de use (UseCases) de forma automática, inyectando en éstos instancias concretas de las dependencias declaradas. Además inicia la aplicación (es el único módulo del proyecto donde encontraremos la función “public static void main(String[] args)”.
+El proyecto está diseñado para levantar todo el ecosistema (Aplicación, Base de Datos, Colas y UI de monitoreo BD) 
+con los siguientes pasos:
 
-**Los beans de los casos de uso se disponibilizan automaticamente gracias a un '@ComponentScan' ubicado en esta capa.**
+### 1. Clonar repositorio:
+```bash
+git clone https://github.com/IvanSH7/nequi-backend-tech-challenge-ms.git
+cd nequi-backend-tech-challenge-ms
+```
+
+### 2. Compilado de la aplicación:
+En la raíz del proyecto, se debe ejecutar el wrapper de Gradle para construir el `.jar`:
+
+```bash
+./gradlew clean build 
+```
+
+### 2. Despliegue infraestructura:
+En la raíz del proyecto se levantará él `docker-compose.yml` el cual se encargara de construir la imagen a partir
+del `.jar`, empaquetando la app, un health check configurado en el compose asegurará que LocalStack haya creado la
+tabla DynamoDB y colas SQS antes de iniciar la applicación de Spring Boot.
+
+```bash
+docker-compose up --build -d
+```
+Una vez completado el proceso de despliegue el API estará aceptando peticiones en http://localhost:9090
+
+## 📊 Monitoreo y Observabilidad Local
+Para auditar el estado del sistema, el docker-compose.yml expone las siguientes herramientas:
+
+### Logs del aplicativo:
+
+```bash
+docker logs -f nequi-backend-app
+```
+
+### DynamoDB Admin UI:
+
+Se puede explorar visualmente la tabla Dynamo, los eventos, tickets y órdenes abriendo en el navegador: http://localhost:8001
+
+## 🛑 Detener el entorno
+Para detener la aplicación y limpiar la red de contenedores:
+
+```bash
+docker-compose down
+```
